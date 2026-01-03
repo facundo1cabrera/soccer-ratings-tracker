@@ -1,21 +1,9 @@
-import { Header } from "@/components/header"
-import { Hero } from "@/components/hero"
-import { FeaturedProducts } from "@/components/featured-products"
-import { Categories } from "@/components/categories"
-import { About } from "@/components/about"
-import { Newsletter } from "@/components/newsletter"
-import { Footer } from "@/components/footer"
-
 export default function Home() {
   return (
     <main className="min-h-screen">
-      <Header />
-      <Hero />
-      <FeaturedProducts />
-      <Categories />
-      <About />
-      <Newsletter />
-      <Footer />
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold">Welcome</h1>
+      </div>
     </main>
   )
 }
