@@ -1,7 +1,62 @@
 @import "tailwindcss";
 
+:root {
+  /* Dark mode first - base colors */
+  --background: 15 15 20;
+  --foreground: 250 250 255;
+  
+  /* Card colors */
+  --card: 25 25 30;
+  --card-foreground: 250 250 255;
+  
+  /* Primary - Strong Green */
+  --primary: 34 197 94;
+  --primary-foreground: 15 15 20;
+  
+  /* Secondary - Strong Blue */
+  --secondary: 59 130 246;
+  --secondary-foreground: 250 250 255;
+  
+  /* Accent - Strong Purple */
+  --accent: 168 85 247;
+  --accent-foreground: 250 250 255;
+  
+  /* Muted colors */
+  --muted: 40 40 50;
+  --muted-foreground: 180 180 190;
+  
+  /* Border and input */
+  --border: 50 50 60;
+  --input: 50 50 60;
+  --ring: 59 130 246;
+  
+  /* Destructive */
+  --destructive: 239 68 68;
+  --destructive-foreground: 250 250 255;
+}
+
+@theme inline {
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-border: rgb(var(--border));
+  --color-input: rgb(var(--input));
+  --color-ring: rgb(var(--ring));
+  --color-destructive: rgb(var(--destructive));
+  --color-destructive-foreground: rgb(var(--destructive-foreground));
+}
+
 @layer base {
   body {
-    @apply antialiased;
+    @apply bg-background text-foreground antialiased;
   }
 }
