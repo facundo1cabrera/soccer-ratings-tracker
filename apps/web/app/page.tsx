@@ -93,12 +93,14 @@ export default function Dashboard() {
 
         {/* Create New Match Button */}
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:border-t-0 sm:p-0 sm:mt-8 sm:bg-transparent">
-          <Button
-            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
-            size="lg"
-          >
-            Crear nuevo partido
-          </Button>
+          <Link href="/match/create">
+            <Button
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
+              size="lg"
+            >
+              Crear nuevo partido
+            </Button>
+          </Link>
         </div>
       </div>
     </main>
