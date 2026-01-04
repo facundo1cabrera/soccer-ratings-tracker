@@ -1,51 +1,7 @@
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-
-// Hardcoded match data
-const matches = [
-  {
-    id: 1,
-    date: "2024-01-15",
-    result: "Victoria",
-    name: "River vs Boca",
-    rating: 8.5,
-  },
-  {
-    id: 2,
-    date: "2024-01-12",
-    result: "Empate",
-    name: "Partido entre amigos",
-    rating: 6.2,
-  },
-  {
-    id: 3,
-    date: "2024-01-10",
-    result: "Derrota",
-    name: "River vs Boca",
-    rating: 4.8,
-  },
-  {
-    id: 4,
-    date: "2024-01-08",
-    result: "Victoria",
-    name: "Partido entre amigos",
-    rating: 9.1,
-  },
-  {
-    id: 5,
-    date: "2024-01-05",
-    result: "Victoria",
-    name: "River vs Boca",
-    rating: 7.3,
-  },
-  {
-    id: 6,
-    date: "2024-01-03",
-    result: "Empate",
-    name: "Partido entre amigos",
-    rating: 5.9,
-  },
-]
+import { matches } from "@/lib/matches"
 
 const hasMoreMatches = matches.length > 5
 const last5Matches = matches.slice(0, 5)
@@ -96,27 +52,33 @@ export default function Dashboard() {
 
           <div className="space-y-3 sm:space-y-4">
             {last5Matches.map((match) => (
-              <Card key={match.id} className="border-border py-3 sm:py-4">
-                <CardHeader className="px-4 sm:px-5 pb-1 sm:pb-2">
-                  <div className="flex flex-row items-center justify-between gap-2 sm:gap-4">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-base sm:text-lg mb-1">
-                        {match.name}
-                      </CardTitle>
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-muted-foreground">
-                        <span>{formatDate(match.date)}</span>
-                        <span>•</span>
-                        <span className="font-medium">{match.result}</span>
+              <Link
+                key={match.id}
+                href={`/match/${match.id}`}
+                className="block"
+              >
+                <Card className="border-border py-3 sm:py-4 cursor-pointer hover:bg-accent/50 transition-colors">
+                  <CardHeader className="px-4 sm:px-5 pb-1 sm:pb-2">
+                    <div className="flex flex-row items-center justify-between gap-2 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base sm:text-lg mb-1">
+                          {match.name}
+                        </CardTitle>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-muted-foreground">
+                          <span>{formatDate(match.date)}</span>
+                          <span>•</span>
+                          <span className="font-medium">{match.result}</span>
+                        </div>
                       </div>
+                      <span
+                        className={`text-sm sm:text-base font-bold text-white px-2 py-1 rounded w-fit shrink-0 ${getRatingColor(match.rating)}`}
+                      >
+                        {match.rating.toFixed(1)}
+                      </span>
                     </div>
-                    <span
-                      className={`text-sm sm:text-base font-bold text-white px-2 py-1 rounded w-fit shrink-0 ${getRatingColor(match.rating)}`}
-                    >
-                      {match.rating.toFixed(1)}
-                    </span>
-                  </div>
-                </CardHeader>
-              </Card>
+                  </CardHeader>
+                </Card>
+              </Link>
             ))}
           </div>
 
