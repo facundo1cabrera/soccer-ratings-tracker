@@ -19,6 +19,8 @@ export default function CreateMatchPage() {
   const [matchName, setMatchName] = useState('')
   const [team1Name, setTeam1Name] = useState('')
   const [team2Name, setTeam2Name] = useState('')
+  const [team1Goals, setTeam1Goals] = useState<number>(0)
+  const [team2Goals, setTeam2Goals] = useState<number>(0)
   const [team1Players, setTeam1Players] = useState<Player[]>([])
   const [team2Players, setTeam2Players] = useState<Player[]>([])
 
@@ -70,6 +72,8 @@ export default function CreateMatchPage() {
       matchName,
       team1Name,
       team2Name,
+      team1Goals,
+      team2Goals,
       team1Players: validTeam1Players,
       team2Players: validTeam2Players,
     }
@@ -135,6 +139,19 @@ export default function CreateMatchPage() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="team1Goals">Goles</Label>
+                    <Input
+                      id="team1Goals"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={team1Goals}
+                      onChange={(e) => setTeam1Goals(parseInt(e.target.value) || 0)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label>Jugadores</Label>
                     <div className="space-y-2">
                       {team1Players.map((player) => (
@@ -190,6 +207,19 @@ export default function CreateMatchPage() {
                       placeholder="Ej: Boca"
                       value={team2Name}
                       onChange={(e) => setTeam2Name(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="team2Goals">Goles</Label>
+                    <Input
+                      id="team2Goals"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={team2Goals}
+                      onChange={(e) => setTeam2Goals(parseInt(e.target.value) || 0)}
                       required
                     />
                   </div>

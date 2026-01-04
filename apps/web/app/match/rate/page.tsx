@@ -21,6 +21,8 @@ interface MatchData {
   matchName: string
   team1Name: string
   team2Name: string
+  team1Goals: number
+  team2Goals: number
   team1Players: { id: string; name: string }[]
   team2Players: { id: string; name: string }[]
 }
@@ -73,6 +75,8 @@ export default function RateMatchPage() {
         matchName: matchData.matchName,
         team1Name: matchData.team1Name,
         team2Name: matchData.team2Name,
+        team1Goals: matchData.team1Goals,
+        team2Goals: matchData.team2Goals,
         team1Players: matchData.team1Players,
         team2Players: matchData.team2Players,
         playerRatings: players.map((p) => ({

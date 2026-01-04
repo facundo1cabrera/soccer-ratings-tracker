@@ -27,6 +27,8 @@ export interface CreateMatchInput {
   matchName: string
   team1Name: string
   team2Name: string
+  team1Goals: number
+  team2Goals: number
   team1Players: { id: string; name: string }[]
   team2Players: { id: string; name: string }[]
 }
@@ -42,12 +44,70 @@ export interface SaveMatchWithRatingsInput {
   matchName: string
   team1Name: string
   team2Name: string
+  team1Goals: number
+  team2Goals: number
   team1Players: { id: string; name: string }[]
   team2Players: { id: string; name: string }[]
   playerRatings: PlayerRating[]
 }
 
-// Hardcoded data - will be replaced with API calls in the future
+// localStorage keys
+const STORAGE_KEY = 'matches'
+const LAST_ID_KEY = 'lastMatchId'
+
+// Helper functions for localStorage
+function isBrowser(): boolean {
+  return typeof window !== 'undefined'
+}
+
+function getFromStorage(): Match[] {
+  if (!isBrowser()) return []
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) return []
+    return JSON.parse(stored)
+  } catch (error) {
+    console.error('Error reading from localStorage:', error)
+    return []
+  }
+}
+
+function saveToStorage(matches: Match[]): void {
+  if (!isBrowser()) return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(matches))
+  } catch (error) {
+    console.error('Error saving to localStorage:', error)
+    throw error
+  }
+}
+
+function getNextId(): number {
+  if (!isBrowser()) return Date.now()
+  try {
+    const lastId = localStorage.getItem(LAST_ID_KEY)
+    const nextId = lastId ? parseInt(lastId, 10) + 1 : 1
+    localStorage.setItem(LAST_ID_KEY, nextId.toString())
+    return nextId
+  } catch (error) {
+    console.error('Error getting next ID:', error)
+    return Date.now()
+  }
+}
+
+function initializeStorage(): void {
+  if (!isBrowser()) return
+  const existing = getFromStorage()
+  if (existing.length === 0) {
+    // Migrate hardcoded data to localStorage on first load
+    saveToStorage(hardcodedMatches)
+    // Set last ID to highest ID in hardcoded data
+    const maxId = Math.max(...hardcodedMatches.map(m => m.id))
+    localStorage.setItem(LAST_ID_KEY, maxId.toString())
+  }
+}
+
+// Hardcoded data - used for initial migration to localStorage
 const hardcodedMatches: Match[] = [
   {
     id: 1,
@@ -202,10 +262,17 @@ const hardcodedMatches: Match[] = [
  * Match Service
  * 
  * This service centralizes all match-related operations.
- * Currently uses hardcoded data, but is structured to easily
+ * Currently uses localStorage for persistence, but is structured to easily
  * replace with API calls in the future.
  */
 class MatchService {
+  constructor() {
+    // Initialize storage on service creation (only in browser)
+    if (isBrowser()) {
+      initializeStorage()
+    }
+  }
+
   /**
    * Get all matches
    * TODO: Replace with API call: GET /api/matches
@@ -215,7 +282,9 @@ class MatchService {
     // const response = await fetch('/api/matches')
     // return response.json()
     
-    return hardcodedMatches
+    const matches = getFromStorage()
+    // Fallback to hardcoded if localStorage is empty (shouldn't happen after init, but safety check)
+    return matches.length > 0 ? matches : hardcodedMatches
   }
 
   /**
@@ -228,8 +297,11 @@ class MatchService {
     // if (!response.ok) return null
     // return response.json()
     
-    const match = hardcodedMatches.find((match) => match.id === id)
-    return match || null
+    const matches = getFromStorage()
+    const match = matches.find((match) => match.id === id)
+    // Fallback to hardcoded if not found in localStorage
+    if (match) return match
+    return hardcodedMatches.find((m) => m.id === id) || null
   }
 
   /**
@@ -251,24 +323,58 @@ class MatchService {
     
     // Calculate average rating for the match
     const allRatings = input.playerRatings.map((p) => p.rating)
-    const averageRating = allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length
+    const averageRating = allRatings.length > 0
+      ? allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length
+      : 5.0
 
-    // Create match object (simulating API response)
+    // Generate unique player IDs (convert string IDs to numbers)
+    let playerIdCounter = Math.max(
+      ...input.team1Players.map(p => {
+        const numId = parseInt(String(p.id).replace(/[^0-9]/g, ''), 10)
+        return isNaN(numId) ? 0 : numId
+      }),
+      ...input.team2Players.map(p => {
+        const numId = parseInt(String(p.id).replace(/[^0-9]/g, ''), 10)
+        return isNaN(numId) ? 0 : numId
+      }),
+      0
+    )
+
+    // Calculate result based on goals
+    let result: string
+    if (input.team1Goals > input.team2Goals) {
+      result = 'Victoria'
+    } else if (input.team1Goals < input.team2Goals) {
+      result = 'Derrota'
+    } else {
+      result = 'Empate'
+    }
+
+    // Create match object
     const newMatch: Match = {
-      id: Date.now(), // Temporary ID generation
+      id: getNextId(),
       date: new Date().toISOString().split('T')[0],
-      result: 'Pendiente', // Could be calculated based on goals if added
+      result,
       name: input.matchName,
       rating: averageRating,
       team1: {
         name: input.team1Name,
-        goals: 0, // Would come from input in real implementation
+        goals: input.team1Goals,
         players: input.team1Players.map((player) => {
           const rating = input.playerRatings.find(
             (pr) => pr.id === player.id && pr.team === 'team1'
           )
+          // Try to parse the string ID, or generate a new one
+          let playerId: number
+          const parsedId = parseInt(String(player.id).replace(/[^0-9]/g, ''), 10)
+          if (!isNaN(parsedId) && parsedId > 0) {
+            playerId = parsedId
+          } else {
+            playerIdCounter++
+            playerId = playerIdCounter
+          }
           return {
-            id: player.id,
+            id: playerId,
             name: player.name,
             rating: rating?.rating || 5.0,
           }
@@ -276,13 +382,22 @@ class MatchService {
       },
       team2: {
         name: input.team2Name,
-        goals: 0, // Would come from input in real implementation
+        goals: input.team2Goals,
         players: input.team2Players.map((player) => {
           const rating = input.playerRatings.find(
             (pr) => pr.id === player.id && pr.team === 'team2'
           )
+          // Try to parse the string ID, or generate a new one
+          let playerId: number
+          const parsedId = parseInt(String(player.id).replace(/[^0-9]/g, ''), 10)
+          if (!isNaN(parsedId) && parsedId > 0) {
+            playerId = parsedId
+          } else {
+            playerIdCounter++
+            playerId = playerIdCounter
+          }
           return {
-            id: player.id,
+            id: playerId,
             name: player.name,
             rating: rating?.rating || 5.0,
           }
@@ -290,11 +405,114 @@ class MatchService {
       },
     }
 
-    // In a real implementation, this would be added to the API response
-    // For now, we just log it (could also add to local state if needed)
-    console.log('Match saved:', newMatch)
+    // Save to localStorage
+    const matches = getFromStorage()
+    matches.unshift(newMatch) // Add to beginning (newest first)
+    saveToStorage(matches)
 
     return newMatch
+  }
+
+  /**
+   * Update an existing match
+   * TODO: Replace with API call: PUT /api/matches/:id
+   * 
+   * @param id - Match ID
+   * @param updates - Partial match data to update
+   * @returns Updated match or null if not found
+   */
+  async updateMatch(id: number, updates: Partial<Match>): Promise<Match | null> {
+    // Future API implementation:
+    // const response = await fetch(`/api/matches/${id}`, {
+    //   method: 'PUT',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(updates),
+    // })
+    // if (!response.ok) return null
+    // return response.json()
+    
+    const matches = getFromStorage()
+    const index = matches.findIndex((m) => m.id === id)
+    
+    if (index === -1) return null
+    
+    const updatedMatch = { ...matches[index], ...updates }
+    matches[index] = updatedMatch
+    saveToStorage(matches)
+    
+    return updatedMatch
+  }
+
+  /**
+   * Delete a match
+   * TODO: Replace with API call: DELETE /api/matches/:id
+   * 
+   * @param id - Match ID
+   * @returns true if deleted, false if not found
+   */
+  async deleteMatch(id: number): Promise<boolean> {
+    // Future API implementation:
+    // const response = await fetch(`/api/matches/${id}`, {
+    //   method: 'DELETE',
+    // })
+    // return response.ok
+    
+    const matches = getFromStorage()
+    const filtered = matches.filter((m) => m.id !== id)
+    
+    if (filtered.length === matches.length) return false // Not found
+    
+    saveToStorage(filtered)
+    return true
+  }
+
+  /**
+   * Update player ratings for an existing match
+   * TODO: Replace with API call: PUT /api/matches/:id/ratings
+   * 
+   * @param matchId - Match ID
+   * @param playerRatings - Updated player ratings
+   * @returns Updated match or null if not found
+   */
+  async updateMatchRatings(
+    matchId: number,
+    playerRatings: PlayerRating[]
+  ): Promise<Match | null> {
+    const match = await this.getMatchById(matchId)
+    if (!match) return null
+
+    // Update player ratings
+    const updatedTeam1Players = match.team1.players.map((player) => {
+      const rating = playerRatings.find(
+        (pr) => String(pr.id) === String(player.id) && pr.team === 'team1'
+      )
+      return rating ? { ...player, rating: rating.rating } : player
+    })
+
+    const updatedTeam2Players = match.team2.players.map((player) => {
+      const rating = playerRatings.find(
+        (pr) => String(pr.id) === String(player.id) && pr.team === 'team2'
+      )
+      return rating ? { ...player, rating: rating.rating } : player
+    })
+
+    // Calculate new average rating
+    const allRatings = playerRatings.map((p) => p.rating)
+    const averageRating = allRatings.length > 0
+      ? allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length
+      : match.rating
+
+    return this.updateMatch(matchId, {
+      rating: averageRating,
+      team1: {
+        ...match.team1,
+        players: updatedTeam1Players,
+      },
+      team2: {
+        ...match.team2,
+        players: updatedTeam2Players,
+      },
+    })
   }
 }
 
@@ -302,5 +520,5 @@ class MatchService {
 export const matchService = new MatchService()
 
 // Re-export types for convenience
-export type { Match, Player, Team, CreateMatchInput, PlayerRating, SaveMatchWithRatingsInput }
+export type { Match as MatchType, Player as PlayerType, Team as TeamType, CreateMatchInput as CreateMatchInputType, PlayerRating as PlayerRatingType, SaveMatchWithRatingsInput as SaveMatchWithRatingsInputType }
 

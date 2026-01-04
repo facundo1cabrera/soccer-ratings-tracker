@@ -1,9 +1,13 @@
+'use client'
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { matchService } from "@/lib/match-service"
+import type { Match } from "@/lib/match-service"
 import { ArrowLeft } from "lucide-react"
 
 function formatDate(dateString: string): string {
@@ -48,18 +52,55 @@ interface MatchDetailPageProps {
   params: Promise<{ id: string }>
 }
 
-export default async function MatchDetailPage({ params }: MatchDetailPageProps) {
-  const { id } = await params
-  const matchId = parseInt(id, 10)
+export default function MatchDetailPage({ params }: MatchDetailPageProps) {
+  const router = useRouter()
+  const [match, setMatch] = useState<Match | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [matchId, setMatchId] = useState<number | null>(null)
 
-  if (isNaN(matchId)) {
-    notFound()
-  }
+  useEffect(() => {
+    async function loadParams() {
+      const resolvedParams = await params
+      const id = parseInt(resolvedParams.id, 10)
+      if (isNaN(id)) {
+        router.push('/')
+        return
+      }
+      setMatchId(id)
+    }
+    loadParams()
+  }, [params, router])
 
-  const match = await matchService.getMatchById(matchId)
+  useEffect(() => {
+    if (matchId === null) return
 
-  if (!match) {
-    notFound()
+    const currentMatchId = matchId // Store in local variable for type narrowing
+    async function loadMatch() {
+      try {
+        const loadedMatch = await matchService.getMatchById(currentMatchId)
+        if (!loadedMatch) {
+          router.push('/')
+          return
+        }
+        setMatch(loadedMatch)
+      } catch (error) {
+        console.error('Error loading match:', error)
+        router.push('/')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadMatch()
+  }, [matchId, router])
+
+  if (loading || !match) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-6 sm:py-8">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </main>
+    )
   }
 
   return (

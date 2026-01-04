@@ -1,7 +1,11 @@
+'use client'
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { matchService } from "@/lib/match-service"
+import type { Match } from "@/lib/match-service"
 
 function getRatingColor(rating: number): string {
   if (rating >= 9.0) {
@@ -32,10 +36,36 @@ function formatDate(dateString: string): string {
   })
 }
 
-export default async function Dashboard() {
-  const matches = await matchService.getAllMatches()
+export default function Dashboard() {
+  const [matches, setMatches] = useState<Match[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadMatches() {
+      try {
+        const loadedMatches = await matchService.getAllMatches()
+        setMatches(loadedMatches)
+      } catch (error) {
+        console.error('Error loading matches:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadMatches()
+  }, [])
+
   const hasMoreMatches = matches.length > 5
   const last5Matches = matches.slice(0, 5)
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background pb-24 sm:pb-0">
+        <div className="container mx-auto px-4 py-6 sm:py-8">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-background pb-24 sm:pb-0">
