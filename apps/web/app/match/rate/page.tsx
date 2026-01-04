@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft } from 'lucide-react'
+import { matchService } from '@/lib/match-service'
 
 interface Player {
   id: string
@@ -63,16 +64,37 @@ export default function RateMatchPage() {
     )
   }
 
-  const handleSave = () => {
-    // TODO: Handle saving the match with ratings
-    console.log('Match data:', matchData)
-    console.log('Player ratings:', players)
-    
-    // Clear sessionStorage
-    sessionStorage.removeItem('pendingMatch')
-    
-    // TODO: Redirect to match detail page or home page
-    router.push('/')
+  const handleSave = async () => {
+    if (!matchData) return
+
+    try {
+      // Save match with ratings using the service
+      const savedMatch = await matchService.saveMatchWithRatings({
+        matchName: matchData.matchName,
+        team1Name: matchData.team1Name,
+        team2Name: matchData.team2Name,
+        team1Players: matchData.team1Players,
+        team2Players: matchData.team2Players,
+        playerRatings: players.map((p) => ({
+          id: p.id,
+          name: p.name,
+          rating: p.rating,
+          team: p.team,
+        })),
+      })
+
+      // Clear sessionStorage
+      sessionStorage.removeItem('pendingMatch')
+
+      // Redirect to match detail page
+      router.push(`/match/${savedMatch.id}`)
+    } catch (error) {
+      console.error('Error saving match:', error)
+      // TODO: Show error message to user
+      // For now, just redirect to home
+      sessionStorage.removeItem('pendingMatch')
+      router.push('/')
+    }
   }
 
   if (!matchData) {
@@ -123,7 +145,7 @@ export default function RateMatchPage() {
                           : matchData.team2Name}
                       </p>
                     </div>
-                    <div className="text-2xl font-bold text-foreground min-w-[3rem] text-right">
+                    <div className="text-2xl font-bold text-foreground min-w-12 text-right">
                       {player.rating.toFixed(1)}
                     </div>
                   </div>

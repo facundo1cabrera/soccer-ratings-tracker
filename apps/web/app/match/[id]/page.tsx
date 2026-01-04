@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { getMatchById } from "@/lib/matches"
+import { matchService } from "@/lib/match-service"
 import { ArrowLeft } from "lucide-react"
 
 function formatDate(dateString: string): string {
@@ -56,7 +56,7 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
     notFound()
   }
 
-  const match = getMatchById(matchId)
+  const match = await matchService.getMatchById(matchId)
 
   if (!match) {
     notFound()

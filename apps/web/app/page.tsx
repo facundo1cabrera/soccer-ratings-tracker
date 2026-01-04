@@ -1,10 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { matches } from "@/lib/matches"
-
-const hasMoreMatches = matches.length > 5
-const last5Matches = matches.slice(0, 5)
+import { matchService } from "@/lib/match-service"
 
 function getRatingColor(rating: number): string {
   if (rating >= 9.0) {
@@ -35,7 +32,11 @@ function formatDate(dateString: string): string {
   })
 }
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const matches = await matchService.getAllMatches()
+  const hasMoreMatches = matches.length > 5
+  const last5Matches = matches.slice(0, 5)
+
   return (
     <main className="min-h-screen bg-background pb-24 sm:pb-0">
       <div className="container mx-auto px-4 py-6 sm:py-8">
