@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { Match } from '@/lib/match-service'
+import { z } from 'zod'
+import { matchSchema, type Match } from '@/lib/match-schemas'
 import { getMatches, setMatches } from '@/lib/matches-data'
 
 // GET /api/matches/[id] - Get a match by ID
@@ -28,9 +29,17 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(match)
+    // Validate match before returning
+    const validatedMatch = matchSchema.parse(match)
+    return NextResponse.json(validatedMatch)
   } catch (error) {
     console.error('Error fetching match:', error)
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid match data', details: error.errors },
+        { status: 500 }
+      )
+    }
     return NextResponse.json(
       { error: 'Failed to fetch match' },
       { status: 500 }
@@ -54,7 +63,9 @@ export async function PUT(
       )
     }
 
-    const updates: Partial<Match> = await request.json()
+    const rawUpdates = await request.json()
+    // Validate partial match updates (using partial schema)
+    const updates = matchSchema.partial().parse(rawUpdates)
     const matches = getMatches()
     const index = matches.findIndex((m) => m.id === matchId)
 
@@ -66,12 +77,20 @@ export async function PUT(
     }
 
     const updatedMatch = { ...matches[index], ...updates }
-    matches[index] = updatedMatch
+    // Validate the complete updated match
+    const validatedMatch = matchSchema.parse(updatedMatch)
+    matches[index] = validatedMatch
     setMatches(matches)
 
-    return NextResponse.json(updatedMatch)
+    return NextResponse.json(validatedMatch)
   } catch (error) {
     console.error('Error updating match:', error)
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: 'Failed to update match' },
       { status: 500 }

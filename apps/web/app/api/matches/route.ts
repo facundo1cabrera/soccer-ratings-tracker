@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { Match, SaveMatchWithRatingsInput } from '@/lib/match-service'
+import { z } from 'zod'
 import { getMatches, setMatches, getNextMatchId } from '@/lib/matches-data'
+import { matchSchema, saveMatchWithRatingsInputSchema, type Match, type SaveMatchWithRatingsInput } from '@/lib/match-schemas'
 
 // GET /api/matches - Get all matches
 export async function GET() {
   try {
     const matches = getMatches()
-    return NextResponse.json(matches)
+    // Validate all matches against schema
+    const validatedMatches = z.array(matchSchema).parse(matches)
+    return NextResponse.json(validatedMatches)
   } catch (error) {
     console.error('Error fetching matches:', error)
     return NextResponse.json(
@@ -19,7 +22,9 @@ export async function GET() {
 // POST /api/matches - Create a new match
 export async function POST(request: NextRequest) {
   try {
-    const body: SaveMatchWithRatingsInput = await request.json()
+    const rawBody = await request.json()
+    // Validate input with Zod
+    const body = saveMatchWithRatingsInputSchema.parse(rawBody)
 
     // Calculate average rating for the match
     const allRatings = body.playerRatings.map((p) => p.rating)
@@ -108,9 +113,17 @@ export async function POST(request: NextRequest) {
     allMatches.unshift(newMatch)
     setMatches(allMatches)
 
-    return NextResponse.json(newMatch, { status: 201 })
+    // Validate the created match before returning
+    const validatedMatch = matchSchema.parse(newMatch)
+    return NextResponse.json(validatedMatch, { status: 201 })
   } catch (error) {
     console.error('Error creating match:', error)
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: 'Failed to create match' },
       { status: 500 }

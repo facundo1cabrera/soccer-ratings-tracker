@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { Match, PlayerRating } from '@/lib/match-service'
+import { z } from 'zod'
+import { matchSchema, playerRatingSchema, type Match, type PlayerRating } from '@/lib/match-schemas'
 import { getMatches, setMatches } from '@/lib/matches-data'
 
 // PUT /api/matches/[id]/ratings - Update player ratings for a match
@@ -18,7 +19,9 @@ export async function PUT(
       )
     }
 
-    const playerRatings: PlayerRating[] = await request.json()
+    const rawPlayerRatings = await request.json()
+    // Validate player ratings input
+    const playerRatings = z.array(playerRatingSchema).parse(rawPlayerRatings)
     const matches = getMatches()
     const match = matches.find((m) => m.id === matchId)
 
@@ -63,13 +66,21 @@ export async function PUT(
       },
     }
 
+    // Validate the updated match before saving
+    const validatedMatch = matchSchema.parse(updatedMatch)
     const index = matches.findIndex((m) => m.id === matchId)
-    matches[index] = updatedMatch
+    matches[index] = validatedMatch
     setMatches(matches)
 
-    return NextResponse.json(updatedMatch)
+    return NextResponse.json(validatedMatch)
   } catch (error) {
     console.error('Error updating match ratings:', error)
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: 'Failed to update match ratings' },
       { status: 500 }

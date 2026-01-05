@@ -1,58 +1,17 @@
 // Import hardcoded matches for fallback
 import { hardcodedMatches } from './matches-data'
 
-// Types
-export interface Player {
-  id: number | string
-  name: string
-  profileImage?: string
-  rating: number
-}
+// Re-export types from schemas for backward compatibility
+export type {
+  Player,
+  Team,
+  Match,
+  PlayerRating,
+  SaveMatchWithRatingsInput,
+} from './match-schemas'
 
-export interface Team {
-  name: string
-  goals: number
-  players: Player[]
-}
-
-export interface Match {
-  id: number
-  date: string
-  result: string
-  name: string
-  rating: number
-  team1: Team
-  team2: Team
-}
-
-// Input types for creating/rating matches
-export interface CreateMatchInput {
-  matchName: string
-  team1Name: string
-  team2Name: string
-  team1Goals: number
-  team2Goals: number
-  team1Players: { id: string; name: string }[]
-  team2Players: { id: string; name: string }[]
-}
-
-export interface PlayerRating {
-  id: string
-  name: string
-  rating: number
-  team: 'team1' | 'team2'
-}
-
-export interface SaveMatchWithRatingsInput {
-  matchName: string
-  team1Name: string
-  team2Name: string
-  team1Goals: number
-  team2Goals: number
-  team1Players: { id: string; name: string }[]
-  team2Players: { id: string; name: string }[]
-  playerRatings: PlayerRating[]
-}
+// Legacy type aliases for backward compatibility
+export type CreateMatchInput = Omit<SaveMatchWithRatingsInput, 'playerRatings'>
 
 /**
  * Match Service
