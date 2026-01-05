@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const newMatch: Match = {
       id: getNextMatchId(),
       date: new Date().toISOString().split('T')[0],
-      result,
+      result: result as 'Victoria' | 'Derrota' | 'Empate',
       name: body.matchName,
       rating: averageRating,
       team1: {

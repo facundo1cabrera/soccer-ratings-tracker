@@ -2,6 +2,35 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### 1. Install Dependencies
+
+```bash
+pnpm install
+```
+
+### 2. Setup Clerk Authentication
+
+1. Create a Clerk account at [https://clerk.com](https://clerk.com)
+2. Create a new application in the Clerk Dashboard
+3. Copy your API keys from the Clerk Dashboard
+4. Create a `.env.local` file in the `apps/web` directory with the following:
+
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
+
+5. (Optional) Customize Clerk URLs:
+
+```env
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+```
+
+### 3. Run the Development Server
+
 First, run the development server:
 
 ```bash

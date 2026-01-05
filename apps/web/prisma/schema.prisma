@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  players Player[] // One user can have many players
+
+  @@map("users")
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String? // Optional: player might not have a user account
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  teamPlayers     TeamPlayer[]
+  ratingsGiven    PlayerRating[] @relation("RatingsGiven") // Ratings this player gave
+  ratingsReceived PlayerRating[] @relation("RatingsReceived") // Ratings this player received
+
+  @@map("players")
+}
+
+model Match {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @default(now())
+  result    String // 'Victoria', 'Derrota', 'Empate'
+  name      String
+  rating    Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  teams         Team[]
+  playerRatings PlayerRating[]
+
+  @@map("matches")
+}
+
+model Team {
+  id        Int      @id @default(autoincrement())
+  matchId   Int
+  name      String
+  goals     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  match       Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  teamPlayers TeamPlayer[]
+
+  @@map("teams")
+}
+
+model TeamPlayer {
+  id        Int      @id @default(autoincrement())
+  teamId    Int
+  playerId  String
+  createdAt DateTime @default(now())
+
+  // Relations
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, playerId])
+  @@map("team_players")
+}
+
+model PlayerRating {
+  id                  Int      @id @default(autoincrement())
+  matchId             Int
+  ownerPlayerId       String // The player who gave the rating
+  destinationPlayerId String // The player who received the rating
+  rating              Float
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  match             Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  ownerPlayer       Player @relation("RatingsGiven", fields: [ownerPlayerId], references: [id], onDelete: Cascade)
+  destinationPlayer Player @relation("RatingsReceived", fields: [destinationPlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, ownerPlayerId, destinationPlayerId]) // One rating per owner per destination per match
+  @@map("player_ratings")
+}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { UserButton, useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { matchService } from "@/lib/match-service"
@@ -37,6 +38,7 @@ function formatDate(dateString: string): string {
 }
 
 export default function Dashboard() {
+  const { user, isLoaded } = useUser()
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -67,13 +69,18 @@ export default function Dashboard() {
     )
   }
 
+  const userName = isLoaded && user ? (user.firstName || user.username || 'Usuario') : 'Usuario'
+
   return (
     <main className="min-h-screen bg-background pb-24 sm:pb-0">
       <div className="container mx-auto px-4 py-6 sm:py-8">
-        {/* Greeting */}
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-foreground">
-          Hola, Facundo
-        </h1>
+        {/* Header with User Button */}
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+            Hola, {userName}
+          </h1>
+          {isLoaded && <UserButton afterSignOutUrl="/" />}
+        </div>
 
         {/* Last 5 Matches Section */}
         <section className="mb-8">
