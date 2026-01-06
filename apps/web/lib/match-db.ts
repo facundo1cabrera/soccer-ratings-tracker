@@ -3,6 +3,7 @@ import type { Match, Player, Team as MatchTeam } from './match-schemas'
 
 /**
  * Transform database models to Match schema format
+ * @param playerIds - Optional array of player IDs to calculate rating for. If provided, returns the average rating received by these players instead of the overall match average.
  */
 export async function dbMatchToMatchSchema(dbMatch: {
   id: number
@@ -25,7 +26,7 @@ export async function dbMatchToMatchSchema(dbMatch: {
     destinationPlayerId: string
     rating: number
   }>
-}): Promise<Match> {
+}, playerIds?: string[]): Promise<Match> {
   // Get all unique player IDs from teams
   const allPlayerIds = new Set<string>()
   dbMatch.teams.forEach(team => {
@@ -80,12 +81,44 @@ export async function dbMatchToMatchSchema(dbMatch: {
     new Set(dbMatch.playerRatings.map(pr => pr.ownerPlayerId))
   )
 
+  // Calculate rating: if playerIds are provided, use the average rating received by those players
+  // Otherwise, use the overall match average rating
+  let matchRating = dbMatch.rating
+  if (playerIds && playerIds.length > 0) {
+    // Check if any of the user's players are actually in this match
+    const userPlayersInMatch = new Set<string>()
+    dbMatch.teams.forEach(team => {
+      team.teamPlayers.forEach(tp => {
+        if (playerIds.includes(tp.player.id)) {
+          userPlayersInMatch.add(tp.player.id)
+        }
+      })
+    })
+    
+    // Only calculate player-specific rating if the user's players are in the match
+    if (userPlayersInMatch.size > 0) {
+      // Find all ratings received by the specified players in this match
+      const playerRatings = dbMatch.playerRatings.filter(pr => 
+        userPlayersInMatch.has(pr.destinationPlayerId)
+      )
+      
+      if (playerRatings.length > 0) {
+        // Calculate average of ratings received by the user's players
+        matchRating = playerRatings.reduce((sum, pr) => sum + pr.rating, 0) / playerRatings.length
+      } else {
+        // If user's players are in the match but haven't received ratings yet, use default
+        matchRating = 5.0
+      }
+    }
+    // If user's players are not in the match, use the overall average (matchRating = dbMatch.rating)
+  }
+
   return {
     id: dbMatch.id,
     date: dbMatch.date.toISOString().split('T')[0],
     result: dbMatch.result as 'Victoria' | 'Derrota' | 'Empate',
     name: dbMatch.name,
-    rating: dbMatch.rating,
+    rating: matchRating,
     team1: transformTeam(team1),
     team2: transformTeam(team2),
     playersWhoSubmittedRatings,
@@ -115,8 +148,9 @@ export async function findOrCreatePlayer(name: string): Promise<string> {
 
 /**
  * Get all matches from database
+ * @param userId - Optional user ID. If provided, returns matches with ratings specific to that user's players.
  */
-export async function getAllMatchesFromDb(): Promise<Match[]> {
+export async function getAllMatchesFromDb(userId?: string): Promise<Match[]> {
   const dbMatches = await prisma.match.findMany({
     include: {
       teams: {
@@ -135,7 +169,17 @@ export async function getAllMatchesFromDb(): Promise<Match[]> {
     },
   })
 
-  return Promise.all(dbMatches.map(dbMatchToMatchSchema))
+  // If userId is provided, get all player IDs for that user
+  let playerIds: string[] | undefined
+  if (userId) {
+    const userPlayers = await prisma.player.findMany({
+      where: { userId },
+      select: { id: true },
+    })
+    playerIds = userPlayers.map(p => p.id)
+  }
+
+  return Promise.all(dbMatches.map(dbMatch => dbMatchToMatchSchema(dbMatch, playerIds)))
 }
 
 /**

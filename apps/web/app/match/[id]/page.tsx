@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { matchService } from "@/lib/match-service"
 import type { Match } from "@/lib/match-service"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Copy, Check } from "lucide-react"
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString)
@@ -57,6 +57,7 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
   const [match, setMatch] = useState<Match | null>(null)
   const [loading, setLoading] = useState(true)
   const [matchId, setMatchId] = useState<number | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     async function loadParams() {
@@ -103,6 +104,29 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
     )
   }
 
+  // Check if all players have completed their ratings
+  const allPlayerIds = new Set<string>()
+  match.team1.players.forEach(player => allPlayerIds.add(String(player.id)))
+  match.team2.players.forEach(player => allPlayerIds.add(String(player.id)))
+  const playersWhoSubmittedRatings = new Set(match.playersWhoSubmittedRatings)
+  const allPlayersCompleted = allPlayerIds.size > 0 && 
+    Array.from(allPlayerIds).every(id => playersWhoSubmittedRatings.has(id))
+
+  const shareLink = typeof window !== 'undefined' 
+    ? `${window.location.origin}/match/${match.id}/join`
+    : ''
+
+  const handleCopy = async () => {
+    if (!shareLink) return
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy:', error)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 sm:py-8">
@@ -121,6 +145,31 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
           </h1>
           <p className="text-muted-foreground">{formatDate(match.date)}</p>
         </div>
+
+        {/* Share Link Section - Show if not all players completed ratings */}
+        {!allPlayersCompleted && (
+          <div className="mb-6">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopy}
+              className="gap-2"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4 text-green-600" />
+                  ¡Enlace copiado!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Copiar enlace para compartir
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Teams Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
