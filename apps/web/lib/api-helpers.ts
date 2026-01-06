@@ -10,7 +10,7 @@ import { ensureUserExists } from './user-db'
  * @param requireAuth - Whether authentication is required (default: false, will create user if authenticated but not required)
  * @returns A wrapped handler that ensures user exists before executing
  */
-export function withUserCreation<T extends any[]>(
+export function withUserCreation<T extends unknown[]>(
   handler: (
     request: NextRequest,
     ...args: T

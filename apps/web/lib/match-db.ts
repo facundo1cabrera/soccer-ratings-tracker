@@ -1,5 +1,5 @@
 import { prisma } from './prisma'
-import type { Match, Player, Team as MatchTeam } from './match-schemas'
+import type { Match, Team as MatchTeam } from './match-schemas'
 
 /**
  * Transform database models to Match schema format

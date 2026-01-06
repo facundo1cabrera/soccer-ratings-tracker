@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
-import { matchSchema, playerRatingSchema, type Match, type PlayerRating } from '@/lib/match-schemas'
+import { matchSchema, playerRatingSchema } from '@/lib/match-schemas'
 import { prisma } from '@/lib/prisma'
 import { withUserCreation } from '@/lib/api-helpers'
 import { findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'

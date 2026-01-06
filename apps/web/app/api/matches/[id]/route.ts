@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { matchSchema, type Match } from '@/lib/match-schemas'
+import { matchSchema } from '@/lib/match-schemas'
 import { getMatchByIdFromDb } from '@/lib/match-db'
 import { withUserCreation } from '@/lib/api-helpers'
+import { Match } from '@prisma/client'
 
 // GET /api/matches/[id] - Get a match by ID
 export async function GET(
@@ -80,7 +81,7 @@ async function handlePUT(
     const { prisma } = await import('@/lib/prisma')
     const { dbMatchToMatchSchema } = await import('@/lib/match-db')
     
-    const updateData: any = {}
+    const updateData: Partial<Match> = {}
     if (updates.name) updateData.name = updates.name
     if (updates.date) updateData.date = new Date(updates.date)
     if (updates.result) updateData.result = updates.result

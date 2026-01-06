@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { getAllMatchesFromDb, findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'
 import { withUserCreation } from '@/lib/api-helpers'
-import { matchSchema, saveMatchWithRatingsInputSchema, createMatchInputSchema, type Match, type SaveMatchWithRatingsInput, type CreateMatchInput } from '@/lib/match-schemas'
+import { matchSchema, saveMatchWithRatingsInputSchema, createMatchInputSchema, type SaveMatchWithRatingsInput, type CreateMatchInput } from '@/lib/match-schemas'
 
 // GET /api/matches - Get all matches
 export async function GET() {

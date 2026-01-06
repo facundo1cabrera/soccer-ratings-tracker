@@ -4,13 +4,12 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft } from 'lucide-react'
 import { matchService } from '@/lib/match-service'
 import type { Match } from '@/lib/match-service'
-import { useUser } from '@clerk/nextjs'
 
 interface Player {
   id: string
@@ -26,7 +25,6 @@ interface RateMatchPageProps {
 export default function RateMatchPage({ params }: RateMatchPageProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useUser()
   const [match, setMatch] = useState<Match | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [matchId, setMatchId] = useState<number | null>(null)
