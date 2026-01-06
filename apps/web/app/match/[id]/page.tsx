@@ -128,7 +128,7 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
           <Card className="border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">{match.team1.name}</CardTitle>
+                <CardTitle className="text-xl">Local</CardTitle>
                 <div className="text-2xl font-bold text-foreground">
                   {match.team1.goals}
                 </div>
@@ -178,7 +178,7 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
           <Card className="border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">{match.team2.name}</CardTitle>
+                <CardTitle className="text-xl">Visitante</CardTitle>
                 <div className="text-2xl font-bold text-foreground">
                   {match.team2.goals}
                 </div>

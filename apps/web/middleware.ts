@@ -1,20 +1,42 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { ensureUserExists } from '@/lib/user-db'
 
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
-  '/sign-up(.*)',
+  '/sign-up(.*)'
 ])
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl
   
-  // Allow public access to match join, rate, and share pages
+  // Allow public access to match pages (results, join, rate, share)
+  // Only protect /match/create which requires authentication
   const isMatchPublicRoute = 
     pathname.startsWith('/match/') && 
-    (pathname.includes('/join') || pathname.includes('/rate') || pathname.includes('/share'))
+    !pathname.includes('/create')
   
-  if (!isPublicRoute(request) && !isMatchPublicRoute) {
+  // Allow public access to API routes needed for match viewing and rating
+  const isPublicApiRoute = 
+    // GET /api/matches - list all matches
+    (pathname === '/api/matches' && request.method === 'GET') ||
+    // GET /api/matches/[id] - get match by ID
+    (pathname.startsWith('/api/matches/') && 
+     !pathname.includes('/ratings') && 
+     request.method === 'GET') ||
+    // PUT /api/matches/[id]/ratings - submit ratings (allow unauthenticated)
+    (pathname.startsWith('/api/matches/') && 
+     pathname.includes('/ratings') && 
+     request.method === 'PUT')
+  
+  if (!isPublicRoute(request) && !isMatchPublicRoute && !isPublicApiRoute) {
     await auth.protect()
+  }
+
+  const authResult = await auth()
+  if (authResult.userId) {
+    ensureUserExists(authResult.userId).catch((error) => {
+      console.error('Failed to ensure user exists in middleware:', error)
+    })
   }
 })
 

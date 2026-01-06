@@ -12,7 +12,6 @@ export async function dbMatchToMatchSchema(dbMatch: {
   rating: number
   teams: Array<{
     id: number
-    name: string
     goals: number
     teamPlayers: Array<{
       player: {
@@ -61,16 +60,15 @@ export async function dbMatchToMatchSchema(dbMatch: {
 
   // Transform teams
   const team1 = dbMatch.teams[0]
-  const team2 = dbMatch.teams[1] || { id: 0, name: '', goals: 0, teamPlayers: [] }
+  const team2 = dbMatch.teams[1] || { id: 0, goals: 0, teamPlayers: [] }
 
   const transformTeam = (team: typeof team1): MatchTeam => ({
-    name: team.name,
     goals: team.goals,
     players: team.teamPlayers.map(tp => {
       const player = tp.player
       const rating = playerRatingMap.get(player.id) || 5.0
       return {
-        id: parseInt(player.id.replace(/[^0-9]/g, ''), 10) || 0,
+        id: player.id, // Return the actual database player ID (cuid string)
         name: player.name,
         rating,
       }

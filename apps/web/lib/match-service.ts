@@ -1,6 +1,4 @@
-// Import hardcoded matches for fallback
 import { Match, PlayerRating, SaveMatchWithRatingsInput } from './match-schemas'
-import { hardcodedMatches } from './matches-data'
 
 // Re-export types from schemas for backward compatibility
 export type {
@@ -33,8 +31,7 @@ class MatchService {
       return response.json()
     } catch (error) {
       console.error('Error fetching matches:', error)
-      // Fallback to hardcoded data if API fails
-      return hardcodedMatches
+      throw error
     }
   }
 
@@ -51,8 +48,7 @@ class MatchService {
       return response.json()
     } catch (error) {
       console.error('Error fetching match:', error)
-      // Fallback to hardcoded data if API fails
-      return hardcodedMatches.find((m) => m.id === id) || null
+      throw error
     }
   }
 

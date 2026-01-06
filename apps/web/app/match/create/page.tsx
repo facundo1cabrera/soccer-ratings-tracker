@@ -17,8 +17,6 @@ interface Player {
 export default function CreateMatchPage() {
   const router = useRouter()
   const [matchName, setMatchName] = useState('')
-  const [team1Name, setTeam1Name] = useState('')
-  const [team2Name, setTeam2Name] = useState('')
   const [team1Goals, setTeam1Goals] = useState<number>(0)
   const [team2Goals, setTeam2Goals] = useState<number>(0)
   const [team1Players, setTeam1Players] = useState<Player[]>([])
@@ -74,8 +72,6 @@ export default function CreateMatchPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           matchName,
-          team1Name,
-          team2Name,
           team1Goals,
           team2Goals,
           team1Players: validTeam1Players,
@@ -136,21 +132,9 @@ export default function CreateMatchPage() {
               {/* Team 1 */}
               <Card className="border-border">
                 <CardHeader>
-                  <CardTitle>Equipo 1</CardTitle>
+                  <CardTitle>Local</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="team1Name">Nombre equipo 1</Label>
-                    <Input
-                      id="team1Name"
-                      type="text"
-                      placeholder="Ej: River"
-                      value={team1Name}
-                      onChange={(e) => setTeam1Name(e.target.value)}
-                      required
-                    />
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="team1Goals">Goles</Label>
                     <Input
@@ -209,21 +193,9 @@ export default function CreateMatchPage() {
               {/* Team 2 */}
               <Card className="border-border">
                 <CardHeader>
-                  <CardTitle>Equipo 2</CardTitle>
+                  <CardTitle>Visitante</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="team2Name">Nombre equipo 2</Label>
-                    <Input
-                      id="team2Name"
-                      type="text"
-                      placeholder="Ej: Boca"
-                      value={team2Name}
-                      onChange={(e) => setTeam2Name(e.target.value)}
-                      required
-                    />
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="team2Goals">Goles</Label>
                     <Input

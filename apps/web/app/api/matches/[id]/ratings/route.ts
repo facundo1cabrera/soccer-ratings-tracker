@@ -3,7 +3,8 @@ import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { matchSchema, playerRatingSchema, type Match, type PlayerRating } from '@/lib/match-schemas'
 import { prisma } from '@/lib/prisma'
-import { getMatchByIdFromDb, findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'
+import { ensureUserExists } from '@/lib/user-db'
+import { findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'
 
 // PUT /api/matches/[id]/ratings - Update player ratings for a match
 export async function PUT(
@@ -27,16 +28,6 @@ export async function PUT(
     
     // Get current user if logged in
     const { userId } = await auth()
-    
-    // Check if match exists
-    const match = await getMatchByIdFromDb(matchId)
-    if (!match) {
-      return NextResponse.json(
-        { error: 'Match not found' },
-        { status: 404 }
-      )
-    }
-
     // Get the owner player ID (the player who is giving the ratings)
     const ownerPlayerId = playerRatings[0]?.ownerPlayerId
     if (!ownerPlayerId) {
@@ -45,9 +36,6 @@ export async function PUT(
         { status: 400 }
       )
     }
-
-    // Find or create the owner player
-    const ownerDbPlayerId = await findOrCreatePlayer(ownerPlayerId)
 
     // Get the match with teams to find destination players
     const dbMatch = await prisma.match.findUnique({
@@ -70,6 +58,24 @@ export async function PUT(
         { error: 'Match not found' },
         { status: 404 }
       )
+    }
+
+    const ownerPlayerExists = dbMatch.teams.some(team =>
+      team.teamPlayers.some(tp => tp.player.id === ownerPlayerId)
+    )
+
+    if (!ownerPlayerExists) {
+      return NextResponse.json(
+        { error: 'Owner player not found in match' },
+        { status: 400 }
+      )
+    }
+
+    if (userId) {
+      await prisma.player.update({
+        where: { id: ownerPlayerId },
+        data: { userId },
+      })
     }
 
     // Create a map of player names to database player IDs
@@ -99,7 +105,7 @@ export async function PUT(
         where: {
           matchId_ownerPlayerId_destinationPlayerId: {
             matchId,
-            ownerPlayerId: ownerDbPlayerId,
+            ownerPlayerId: ownerPlayerId,
             destinationPlayerId: destinationDbPlayerId,
           },
         },
@@ -108,7 +114,7 @@ export async function PUT(
         },
         create: {
           matchId,
-          ownerPlayerId: ownerDbPlayerId,
+          ownerPlayerId: ownerPlayerId,
           destinationPlayerId: destinationDbPlayerId,
           rating: rating.rating,
         },
@@ -121,7 +127,7 @@ export async function PUT(
     })
     const averageRating = allRatings.length > 0
       ? allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length
-      : match.rating
+      : dbMatch.rating
 
     // Update match rating
     await prisma.match.update({

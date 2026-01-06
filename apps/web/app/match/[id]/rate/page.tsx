@@ -200,9 +200,7 @@ export default function RateMatchPage({ params }: RateMatchPageProps) {
                         {player.name}
                       </Label>
                       <p className="text-sm text-muted-foreground">
-                        {player.team === 'team1'
-                          ? match.team1.name
-                          : match.team2.name}
+                        {player.team === 'team1' ? 'Local' : 'Visitante'}
                       </p>
                     </div>
                     <div className="text-2xl font-bold text-foreground min-w-12 text-right">

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { getAllMatchesFromDb, findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'
+import { ensureUserExists } from '@/lib/user-db'
 import { matchSchema, saveMatchWithRatingsInputSchema, createMatchInputSchema, type Match, type SaveMatchWithRatingsInput, type CreateMatchInput } from '@/lib/match-schemas'
 
 // GET /api/matches - Get all matches
@@ -23,6 +25,12 @@ export async function GET() {
 // POST /api/matches - Create a new match (with or without ratings)
 export async function POST(request: NextRequest) {
   try {
+    // Ensure user exists in database if authenticated (just-in-time creation)
+    const { userId } = await auth()
+    if (userId) {
+      await ensureUserExists(userId)
+    }
+
     const rawBody = await request.json()
     
     // Try to parse as match with ratings first, then as match without ratings
@@ -75,7 +83,6 @@ export async function POST(request: NextRequest) {
         teams: {
           create: [
             {
-              name: body.team1Name,
               goals: body.team1Goals,
               teamPlayers: {
                 create: body.team1Players.map(p => ({
@@ -84,7 +91,6 @@ export async function POST(request: NextRequest) {
               },
             },
             {
-              name: body.team2Name,
               goals: body.team2Goals,
               teamPlayers: {
                 create: body.team2Players.map(p => ({

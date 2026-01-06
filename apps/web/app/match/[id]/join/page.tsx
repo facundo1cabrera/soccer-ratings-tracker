@@ -17,7 +17,6 @@ interface PlayerOption {
   id: number | string
   name: string
   team: 'team1' | 'team2'
-  teamName: string
 }
 
 export default function JoinMatchPage({ params }: JoinMatchPageProps) {
@@ -84,13 +83,11 @@ export default function JoinMatchPage({ params }: JoinMatchPageProps) {
       id: p.id,
       name: p.name,
       team: 'team1' as const,
-      teamName: match.team1.name,
     })),
     ...match.team2.players.map((p) => ({
       id: p.id,
       name: p.name,
       team: 'team2' as const,
-      teamName: match.team2.name,
     })),
   ]
 
@@ -137,7 +134,7 @@ export default function JoinMatchPage({ params }: JoinMatchPageProps) {
                           {player.name}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {player.teamName}
+                          {player.team === 'team1' ? 'Local' : 'Visitante'}
                         </p>
                       </div>
                       {selectedPlayerId === String(player.id) && (

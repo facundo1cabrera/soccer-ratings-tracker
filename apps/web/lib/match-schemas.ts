@@ -9,7 +9,6 @@ export const playerSchema = z.object({
 })
 
 export const teamSchema = z.object({
-  name: z.string(),
   goals: z.number().int().min(0),
   players: z.array(playerSchema),
 })
@@ -34,8 +33,6 @@ export const playerRatingSchema = z.object({
 
 export const createMatchInputSchema = z.object({
   matchName: z.string().min(1),
-  team1Name: z.string().min(1),
-  team2Name: z.string().min(1),
   team1Goals: z.number().int().min(0),
   team2Goals: z.number().int().min(0),
   team1Players: z.array(

@@ -26,11 +26,6 @@ import {
   updateMatchRatings as apiUpdateMatchRatings,
 } from './api-client'
 import type { Match, SaveMatchWithRatingsInput, PlayerRating } from './match-schemas'
-import { hardcodedMatches } from './matches-data'
-
-type ApiResponse<T> = 
-  | { success: true; data: T }
-  | { success: false; error: string; status?: number }
 
 class MatchServiceV2 {
   /**
@@ -42,8 +37,7 @@ class MatchServiceV2 {
       return result.data
     }
     console.error('Error fetching matches:', result.error)
-    // Fallback to hardcoded data if API fails
-    return hardcodedMatches
+    throw new Error(result.error)
   }
 
   /**
@@ -58,8 +52,7 @@ class MatchServiceV2 {
       return null
     }
     console.error('Error fetching match:', result.error)
-    // Fallback to hardcoded data if API fails
-    return hardcodedMatches.find((m) => m.id === id) || null
+    throw new Error(result.error)
   }
 
   /**
