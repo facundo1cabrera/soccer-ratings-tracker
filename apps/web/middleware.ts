@@ -1,5 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { ensureUserExists } from '@/lib/user-db'
 
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
@@ -32,12 +31,7 @@ export default clerkMiddleware(async (auth, request) => {
     await auth.protect()
   }
 
-  const authResult = await auth()
-  if (authResult.userId) {
-    ensureUserExists(authResult.userId).catch((error) => {
-      console.error('Failed to ensure user exists in middleware:', error)
-    })
-  }
+  // User creation is handled in API routes where needed (just-in-time)
 })
 
 export const config = {

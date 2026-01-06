@@ -3,11 +3,11 @@ import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { matchSchema, playerRatingSchema, type Match, type PlayerRating } from '@/lib/match-schemas'
 import { prisma } from '@/lib/prisma'
-import { ensureUserExists } from '@/lib/user-db'
+import { withUserCreation } from '@/lib/api-helpers'
 import { findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'
 
 // PUT /api/matches/[id]/ratings - Update player ratings for a match
-export async function PUT(
+async function handlePUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -176,4 +176,7 @@ export async function PUT(
     )
   }
 }
+
+// Export wrapped handler with user creation (optional auth - ratings can be submitted anonymously)
+export const PUT = withUserCreation(handlePUT)
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { matchSchema, type Match } from '@/lib/match-schemas'
 import { getMatchByIdFromDb } from '@/lib/match-db'
+import { withUserCreation } from '@/lib/api-helpers'
 
 // GET /api/matches/[id] - Get a match by ID
 export async function GET(
@@ -47,7 +48,7 @@ export async function GET(
 }
 
 // PUT /api/matches/[id] - Update a match
-export async function PUT(
+async function handlePUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -124,7 +125,7 @@ export async function PUT(
 }
 
 // DELETE /api/matches/[id] - Delete a match
-export async function DELETE(
+async function handleDELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -165,4 +166,8 @@ export async function DELETE(
     )
   }
 }
+
+// Export wrapped handlers with user creation (require auth for write operations)
+export const PUT = withUserCreation(handlePUT, true)
+export const DELETE = withUserCreation(handleDELETE, true)
 
