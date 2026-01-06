@@ -77,18 +77,27 @@ export default function JoinMatchPage({ params }: JoinMatchPageProps) {
     )
   }
 
-  // Combine all players with team information
+  // Get set of player IDs who have already submitted ratings
+  const playersWhoSubmittedRatings = new Set(
+    match.playersWhoSubmittedRatings || []
+  )
+
+  // Combine all players with team information, filtering out players who have already submitted ratings
   const allPlayers: PlayerOption[] = [
-    ...match.team1.players.map((p) => ({
-      id: p.id,
-      name: p.name,
-      team: 'team1' as const,
-    })),
-    ...match.team2.players.map((p) => ({
-      id: p.id,
-      name: p.name,
-      team: 'team2' as const,
-    })),
+    ...match.team1.players
+      .filter((p) => !playersWhoSubmittedRatings.has(String(p.id)))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        team: 'team1' as const,
+      })),
+    ...match.team2.players
+      .filter((p) => !playersWhoSubmittedRatings.has(String(p.id)))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        team: 'team2' as const,
+      })),
   ]
 
   return (

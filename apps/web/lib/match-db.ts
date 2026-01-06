@@ -75,6 +75,11 @@ export async function dbMatchToMatchSchema(dbMatch: {
     }),
   })
 
+  // Extract unique player IDs who have submitted ratings (ownerPlayerId)
+  const playersWhoSubmittedRatings = Array.from(
+    new Set(dbMatch.playerRatings.map(pr => pr.ownerPlayerId))
+  )
+
   return {
     id: dbMatch.id,
     date: dbMatch.date.toISOString().split('T')[0],
@@ -83,6 +88,7 @@ export async function dbMatchToMatchSchema(dbMatch: {
     rating: dbMatch.rating,
     team1: transformTeam(team1),
     team2: transformTeam(team2),
+    playersWhoSubmittedRatings,
   }
 }
 

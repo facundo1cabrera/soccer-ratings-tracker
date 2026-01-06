@@ -21,6 +21,7 @@ export const matchSchema = z.object({
   rating: z.number().min(0).max(10),
   team1: teamSchema,
   team2: teamSchema,
+  playersWhoSubmittedRatings: z.array(z.string())
 })
 
 export const playerRatingSchema = z.object({
