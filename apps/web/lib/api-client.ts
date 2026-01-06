@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import type { Match, SaveMatchWithRatingsInput, PlayerRating } from './match-schemas'
-import { matchSchema, saveMatchWithRatingsInputSchema, playerRatingSchema, apiErrorSchema } from './match-schemas'
+import type { Match, SaveMatchWithRatingsInput, CreateMatchInput, PlayerRating } from './match-schemas'
+import { matchSchema, saveMatchWithRatingsInputSchema, createMatchInputSchema, playerRatingSchema, apiErrorSchema } from './match-schemas'
 
 /**
  * Type-safe API client for match operations
@@ -70,13 +70,22 @@ export async function getMatchById(id: number): Promise<ApiResponse<Match | null
 }
 
 /**
- * Create a new match with ratings
+ * Create a new match (with or without ratings)
  */
 export async function createMatch(
-  input: SaveMatchWithRatingsInput
+  input: SaveMatchWithRatingsInput | CreateMatchInput
 ): Promise<ApiResponse<Match>> {
-  // Validate input
-  const validated = saveMatchWithRatingsInputSchema.safeParse(input)
+  // Try to validate as match with ratings first, then as match without ratings
+  let validated
+  try {
+    validated = saveMatchWithRatingsInputSchema.safeParse(input)
+    if (!validated.success) {
+      validated = createMatchInputSchema.safeParse(input)
+    }
+  } catch {
+    validated = createMatchInputSchema.safeParse(input)
+  }
+  
   if (!validated.success) {
     return {
       success: false,

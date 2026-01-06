@@ -6,7 +6,14 @@ const isPublicRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
+  const { pathname } = request.nextUrl
+  
+  // Allow public access to match join, rate, and share pages
+  const isMatchPublicRoute = 
+    pathname.startsWith('/match/') && 
+    (pathname.includes('/join') || pathname.includes('/rate') || pathname.includes('/share'))
+  
+  if (!isPublicRoute(request) && !isMatchPublicRoute) {
     await auth.protect()
   }
 })

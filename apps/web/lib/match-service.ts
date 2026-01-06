@@ -1,4 +1,5 @@
 // Import hardcoded matches for fallback
+import { Match, PlayerRating, SaveMatchWithRatingsInput } from './match-schemas'
 import { hardcodedMatches } from './matches-data'
 
 // Re-export types from schemas for backward compatibility
@@ -155,5 +156,5 @@ class MatchService {
 export const matchService = new MatchService()
 
 // Re-export types for convenience
-export type { Match as MatchType, Player as PlayerType, Team as TeamType, CreateMatchInput as CreateMatchInputType, PlayerRating as PlayerRatingType, SaveMatchWithRatingsInput as SaveMatchWithRatingsInputType }
+export type { Match as MatchType, CreateMatchInput as CreateMatchInputType, PlayerRating as PlayerRatingType, SaveMatchWithRatingsInput as SaveMatchWithRatingsInputType }
 

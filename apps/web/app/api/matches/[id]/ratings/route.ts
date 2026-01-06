@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { auth } from '@clerk/nextjs/server'
 import { matchSchema, playerRatingSchema, type Match, type PlayerRating } from '@/lib/match-schemas'
-import { getMatches, setMatches } from '@/lib/matches-data'
+import { prisma } from '@/lib/prisma'
+import { getMatchByIdFromDb, findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'
 
 // PUT /api/matches/[id]/ratings - Update player ratings for a match
 export async function PUT(
@@ -22,9 +24,12 @@ export async function PUT(
     const rawPlayerRatings = await request.json()
     // Validate player ratings input
     const playerRatings = z.array(playerRatingSchema).parse(rawPlayerRatings)
-    const matches = getMatches()
-    const match = matches.find((m) => m.id === matchId)
-
+    
+    // Get current user if logged in
+    const { userId } = await auth()
+    
+    // Check if match exists
+    const match = await getMatchByIdFromDb(matchId)
     if (!match) {
       return NextResponse.json(
         { error: 'Match not found' },
@@ -32,46 +37,124 @@ export async function PUT(
       )
     }
 
-    // Update player ratings
-    const updatedTeam1Players = match.team1.players.map((player) => {
-      const rating = playerRatings.find(
-        (pr) => String(pr.id) === String(player.id) && pr.team === 'team1'
+    // Get the owner player ID (the player who is giving the ratings)
+    const ownerPlayerId = playerRatings[0]?.ownerPlayerId
+    if (!ownerPlayerId) {
+      return NextResponse.json(
+        { error: 'ownerPlayerId is required' },
+        { status: 400 }
       )
-      return rating ? { ...player, rating: rating.rating } : player
-    })
-
-    const updatedTeam2Players = match.team2.players.map((player) => {
-      const rating = playerRatings.find(
-        (pr) => String(pr.id) === String(player.id) && pr.team === 'team2'
-      )
-      return rating ? { ...player, rating: rating.rating } : player
-    })
-
-    // Calculate new average rating
-    const allRatings = playerRatings.map((p) => p.rating)
-    const averageRating = allRatings.length > 0
-      ? allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length
-      : match.rating
-
-    const updatedMatch: Match = {
-      ...match,
-      rating: averageRating,
-      team1: {
-        ...match.team1,
-        players: updatedTeam1Players,
-      },
-      team2: {
-        ...match.team2,
-        players: updatedTeam2Players,
-      },
     }
 
-    // Validate the updated match before saving
-    const validatedMatch = matchSchema.parse(updatedMatch)
-    const index = matches.findIndex((m) => m.id === matchId)
-    matches[index] = validatedMatch
-    setMatches(matches)
+    // Find or create the owner player
+    const ownerDbPlayerId = await findOrCreatePlayer(ownerPlayerId)
 
+    // Get the match with teams to find destination players
+    const dbMatch = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        teams: {
+          include: {
+            teamPlayers: {
+              include: {
+                player: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!dbMatch) {
+      return NextResponse.json(
+        { error: 'Match not found' },
+        { status: 404 }
+      )
+    }
+
+    // Create a map of player names to database player IDs
+    const playerNameToDbId = new Map<string, string>()
+    dbMatch.teams.forEach(team => {
+      team.teamPlayers.forEach(tp => {
+        playerNameToDbId.set(tp.player.name, tp.player.id)
+      })
+    })
+
+    // Upsert all player ratings
+    for (const rating of playerRatings) {
+      // Find the destination player by matching the rating ID/name with player names
+      // The rating.id might be a player name or ID from the frontend
+      let destinationDbPlayerId: string | undefined
+      
+      // Try to find by name first (most common case)
+      destinationDbPlayerId = playerNameToDbId.get(rating.name)
+      
+      // If not found by name, try to find or create by the ID
+      if (!destinationDbPlayerId) {
+        destinationDbPlayerId = await findOrCreatePlayer(rating.name)
+      }
+
+      // Create or update the rating
+      await prisma.playerRating.upsert({
+        where: {
+          matchId_ownerPlayerId_destinationPlayerId: {
+            matchId,
+            ownerPlayerId: ownerDbPlayerId,
+            destinationPlayerId: destinationDbPlayerId,
+          },
+        },
+        update: {
+          rating: rating.rating,
+        },
+        create: {
+          matchId,
+          ownerPlayerId: ownerDbPlayerId,
+          destinationPlayerId: destinationDbPlayerId,
+          rating: rating.rating,
+        },
+      })
+    }
+
+    // Calculate new average rating from all ratings for this match
+    const allRatings = await prisma.playerRating.findMany({
+      where: { matchId },
+    })
+    const averageRating = allRatings.length > 0
+      ? allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length
+      : match.rating
+
+    // Update match rating
+    await prisma.match.update({
+      where: { id: matchId },
+      data: { rating: averageRating },
+    })
+
+    // Fetch the complete updated match
+    const updatedDbMatch = await prisma.match.findUnique({
+      where: { id: matchId },
+      include: {
+        teams: {
+          include: {
+            teamPlayers: {
+              include: {
+                player: true,
+              },
+            },
+          },
+        },
+        playerRatings: true,
+      },
+    })
+
+    if (!updatedDbMatch) {
+      throw new Error('Failed to fetch updated match')
+    }
+
+    // Transform to Match schema format
+    const updatedMatch = await dbMatchToMatchSchema(updatedDbMatch)
+
+    // Validate the updated match before returning
+    const validatedMatch = matchSchema.parse(updatedMatch)
     return NextResponse.json(validatedMatch)
   } catch (error) {
     console.error('Error updating match ratings:', error)

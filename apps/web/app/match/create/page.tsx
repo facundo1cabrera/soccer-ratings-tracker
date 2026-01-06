@@ -60,28 +60,41 @@ export default function CreateMatchPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Filter out players without names
     const validTeam1Players = team1Players.filter((p) => p.name.trim() !== '')
     const validTeam2Players = team2Players.filter((p) => p.name.trim() !== '')
     
-    // Store match data in sessionStorage to pass to rating page
-    const matchData = {
-      matchName,
-      team1Name,
-      team2Name,
-      team1Goals,
-      team2Goals,
-      team1Players: validTeam1Players,
-      team2Players: validTeam2Players,
+    try {
+      // Create match without ratings first
+      const response = await fetch('/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchName,
+          team1Name,
+          team2Name,
+          team1Goals,
+          team2Goals,
+          team1Players: validTeam1Players,
+          team2Players: validTeam2Players,
+        }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to create match')
+      }
+      
+      const createdMatch = await response.json()
+      
+      // Redirect to share page
+      router.push(`/match/${createdMatch.id}/share`)
+    } catch (error) {
+      console.error('Error creating match:', error)
+      // TODO: Show error message to user
     }
-    
-    sessionStorage.setItem('pendingMatch', JSON.stringify(matchData))
-    
-    // Redirect to rating page
-    router.push('/match/rate')
   }
 
   return (

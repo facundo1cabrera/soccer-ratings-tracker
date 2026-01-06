@@ -151,26 +151,3 @@ export const hardcodedMatches: Match[] = [
   },
 ]
 
-// In-memory storage (for now, using hardcoded data as base)
-// In a real app, this would be replaced with a database
-let matches: Match[] = [...hardcodedMatches]
-let nextId = Math.max(...hardcodedMatches.map(m => m.id)) + 1
-
-// Shared state management functions
-export function getMatches(): Match[] {
-  return matches
-}
-
-export function setMatches(newMatches: Match[]): void {
-  matches = newMatches
-}
-
-export function getNextMatchId(): number {
-  return nextId++
-}
-
-export function resetMatches(): void {
-  matches = [...hardcodedMatches]
-  nextId = Math.max(...hardcodedMatches.map(m => m.id)) + 1
-}
-

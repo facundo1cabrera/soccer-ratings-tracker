@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { matchSchema, type Match } from '@/lib/match-schemas'
-import { getMatches, setMatches } from '@/lib/matches-data'
+import { getMatchByIdFromDb } from '@/lib/match-db'
 
 // GET /api/matches/[id] - Get a match by ID
 export async function GET(
@@ -19,8 +19,7 @@ export async function GET(
       )
     }
 
-    const matches = getMatches()
-    const match = matches.find((m) => m.id === matchId)
+    const match = await getMatchByIdFromDb(matchId)
 
     if (!match) {
       return NextResponse.json(
@@ -66,22 +65,48 @@ export async function PUT(
     const rawUpdates = await request.json()
     // Validate partial match updates (using partial schema)
     const updates = matchSchema.partial().parse(rawUpdates)
-    const matches = getMatches()
-    const index = matches.findIndex((m) => m.id === matchId)
 
-    if (index === -1) {
+    // Check if match exists
+    const existingMatch = await getMatchByIdFromDb(matchId)
+    if (!existingMatch) {
       return NextResponse.json(
         { error: 'Match not found' },
         { status: 404 }
       )
     }
 
-    const updatedMatch = { ...matches[index], ...updates }
-    // Validate the complete updated match
-    const validatedMatch = matchSchema.parse(updatedMatch)
-    matches[index] = validatedMatch
-    setMatches(matches)
+    // Update match in database
+    const { prisma } = await import('@/lib/prisma')
+    const { dbMatchToMatchSchema } = await import('@/lib/match-db')
+    
+    const updateData: any = {}
+    if (updates.name) updateData.name = updates.name
+    if (updates.date) updateData.date = new Date(updates.date)
+    if (updates.result) updateData.result = updates.result
+    if (updates.rating !== undefined) updateData.rating = updates.rating
 
+    const dbMatch = await prisma.match.update({
+      where: { id: matchId },
+      data: updateData,
+      include: {
+        teams: {
+          include: {
+            teamPlayers: {
+              include: {
+                player: true,
+              },
+            },
+          },
+        },
+        playerRatings: true,
+      },
+    })
+
+    // Transform to Match schema format
+    const match = await dbMatchToMatchSchema(dbMatch)
+    
+    // Validate the complete updated match
+    const validatedMatch = matchSchema.parse(match)
     return NextResponse.json(validatedMatch)
   } catch (error) {
     console.error('Error updating match:', error)
@@ -114,17 +139,23 @@ export async function DELETE(
       )
     }
 
-    const matches = getMatches()
-    const filtered = matches.filter((m) => m.id !== matchId)
-
-    if (filtered.length === matches.length) {
+    // Check if match exists
+    const { getMatchByIdFromDb } = await import('@/lib/match-db')
+    const existingMatch = await getMatchByIdFromDb(matchId)
+    
+    if (!existingMatch) {
       return NextResponse.json(
         { error: 'Match not found' },
         { status: 404 }
       )
     }
 
-    setMatches(filtered)
+    // Delete match (cascade will delete teams, teamPlayers, and playerRatings)
+    const { prisma } = await import('@/lib/prisma')
+    await prisma.match.delete({
+      where: { id: matchId },
+    })
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting match:', error)

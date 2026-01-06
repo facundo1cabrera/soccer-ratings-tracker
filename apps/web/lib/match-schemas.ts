@@ -29,9 +29,10 @@ export const playerRatingSchema = z.object({
   name: z.string(),
   rating: z.number().min(0).max(10),
   team: z.enum(['team1', 'team2']),
+  ownerPlayerId: z.string(), // The player who gave this rating
 })
 
-export const saveMatchWithRatingsInputSchema = z.object({
+export const createMatchInputSchema = z.object({
   matchName: z.string().min(1),
   team1Name: z.string().min(1),
   team2Name: z.string().min(1),
@@ -49,6 +50,9 @@ export const saveMatchWithRatingsInputSchema = z.object({
       name: z.string(),
     })
   ),
+})
+
+export const saveMatchWithRatingsInputSchema = createMatchInputSchema.extend({
   playerRatings: z.array(playerRatingSchema),
 })
 
@@ -57,6 +61,7 @@ export type Player = z.infer<typeof playerSchema>
 export type Team = z.infer<typeof teamSchema>
 export type Match = z.infer<typeof matchSchema>
 export type PlayerRating = z.infer<typeof playerRatingSchema>
+export type CreateMatchInput = z.infer<typeof createMatchInputSchema>
 export type SaveMatchWithRatingsInput = z.infer<typeof saveMatchWithRatingsInputSchema>
 
 // API Response types
