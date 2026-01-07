@@ -147,11 +147,25 @@ export async function findOrCreatePlayer(name: string): Promise<string> {
 }
 
 /**
- * Get all matches from database
- * @param userId - Optional user ID. If provided, returns matches with ratings specific to that user's players.
+ * Get all matches from database for a specific user
+ * @param userId - Required user ID. Returns only matches where the user has a player, with ratings specific to that user's players.
  */
-export async function getAllMatchesFromDb(userId?: string): Promise<Match[]> {
+export async function getAllMatchesFromUser(userId: string): Promise<Match[]> {
+  // Only return matches where at least one player has that userId
   const dbMatches = await prisma.match.findMany({
+    where: {
+      teams: {
+        some: {
+          teamPlayers: {
+            some: {
+              player: {
+                userId: userId,
+              },
+            },
+          },
+        },
+      },
+    },
     include: {
       teams: {
         include: {
@@ -169,15 +183,12 @@ export async function getAllMatchesFromDb(userId?: string): Promise<Match[]> {
     },
   })
 
-  // If userId is provided, get all player IDs for that user
-  let playerIds: string[] | undefined
-  if (userId) {
-    const userPlayers = await prisma.player.findMany({
-      where: { userId },
-      select: { id: true },
-    })
-    playerIds = userPlayers.map(p => p.id)
-  }
+  // Get all player IDs for that user
+  const userPlayers = await prisma.player.findMany({
+    where: { userId },
+    select: { id: true },
+  })
+  const playerIds = userPlayers.map(p => p.id)
 
   return Promise.all(dbMatches.map(dbMatch => dbMatchToMatchSchema(dbMatch, playerIds)))
 }

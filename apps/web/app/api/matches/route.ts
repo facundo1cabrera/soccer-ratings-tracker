@@ -2,17 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
-import { getAllMatchesFromDb, findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'
+import { getAllMatchesFromUser, findOrCreatePlayer, dbMatchToMatchSchema } from '@/lib/match-db'
 import { withUserCreation } from '@/lib/api-helpers'
 import { matchSchema, saveMatchWithRatingsInputSchema, createMatchInputSchema, type SaveMatchWithRatingsInput, type CreateMatchInput } from '@/lib/match-schemas'
 
-// GET /api/matches - Get all matches
+// GET /api/matches - Get all matches for authenticated user
 export async function GET() {
   try {
-    // Get current user ID to fetch player-specific ratings
+    // Get current user ID - require authentication
     const { userId } = await auth()
     
-    const matches = await getAllMatchesFromDb(userId || undefined)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
+    const matches = await getAllMatchesFromUser(userId)
     // Validate all matches against schema
     const validatedMatches = z.array(matchSchema).parse(matches)
     return NextResponse.json(validatedMatches)
