@@ -9,8 +9,8 @@ import { matchService } from "@/lib/match-service";
 import type { Match } from "@/lib/match-service";
 import { Plus, Trophy, Calendar, TrendingUp, ChevronRight } from "lucide-react";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -213,9 +213,9 @@ export default function Dashboard() {
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Historial de rendimientos
             </h2>
-            <div className="bg-card border border-border rounded-xl p-4">
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart
+            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart
                   data={[...matches].reverse().map((m, i) => ({
                     name: `${i + 1}`,
                     rating: m.rating,
@@ -224,64 +224,82 @@ export default function Dashboard() {
                     color: getChartColor(m.rating),
                     performance: getPerformanceLabel(m.rating),
                   }))}
-                  margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+                  margin={{ top: 10, right: 8, left: -20, bottom: 0 }}
                 >
+                  <defs>
+                    <linearGradient id="ratingGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#383838"
+                    strokeDasharray="2 4"
+                    stroke="#2a2a2a"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="name"
-                    stroke="#71717a"
+                    stroke="#52525b"
                     fontSize={11}
                     tickLine={false}
                     axisLine={false}
+                    dy={4}
                   />
                   <YAxis
                     domain={[0, 10]}
-                    stroke="#71717a"
+                    stroke="#52525b"
                     fontSize={11}
                     tickLine={false}
                     axisLine={false}
-                    ticks={[0, 2, 4, 6, 8, 10]}
+                    ticks={[0, 5, 10]}
                   />
                   <Tooltip
+                    cursor={{ stroke: "#6366f1", strokeWidth: 1, strokeDasharray: "4 2" }}
                     content={({ payload }) => {
                       if (!payload || !payload[0]) return null;
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg">
-                          <p className="text-xs text-muted-foreground">
+                        <div className="bg-card/95 backdrop-blur border border-border/80 rounded-xl px-3.5 py-2.5 shadow-xl">
+                          <p className="text-[11px] text-muted-foreground mb-1">
                             {data.date}
                           </p>
-                          <p className="text-sm font-semibold text-foreground">
-                            {data.rating.toFixed(1)} — {data.result}
+                          <p className="text-base font-bold text-foreground leading-tight">
+                            {data.rating.toFixed(1)}
                           </p>
-                          <p
-                            className="text-xs font-medium mt-1"
-                            style={{ color: data.color }}
-                          >
-                            {data.performance}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: data.color }}
+                            />
+                            <p
+                              className="text-xs font-medium"
+                              style={{ color: data.color }}
+                            >
+                              {data.performance}
+                            </p>
+                            <span className="text-xs text-muted-foreground">· {data.result}</span>
+                          </div>
                         </div>
                       );
                     }}
                   />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="rating"
-                    stroke="#71717a"
-                    strokeWidth={1.5}
+                    stroke="#6366f1"
+                    strokeWidth={2.5}
+                    fill="url(#ratingGradient)"
                     dot={(props: any) => {
                       const { cx, cy, payload } = props;
                       return (
                         <circle
+                          key={`dot-${cx}-${cy}`}
                           cx={cx}
                           cy={cy}
-                          r={5}
+                          r={4.5}
                           fill={payload.color}
-                          stroke="none"
+                          stroke="#0a0a0a"
+                          strokeWidth={2}
                         />
                       );
                     }}
@@ -289,39 +307,37 @@ export default function Dashboard() {
                       const { cx, cy, payload } = props;
                       return (
                         <circle
+                          key={`active-${cx}-${cy}`}
                           cx={cx}
                           cy={cy}
                           r={7}
                           fill={payload.color}
                           stroke="#fff"
-                          strokeWidth={2}
+                          strokeWidth={2.5}
                         />
                       );
                     }}
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
               {/* Legend */}
-              <div className="flex flex-wrap gap-2 mt-4 justify-center">
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-4 justify-center">
                 {[
-                  { label: "Épico", color: "#a855f7", min: 9.0 },
-                  { label: "Excelente", color: "#2563eb", min: 8.6 },
-                  { label: "Muy bueno", color: "#60a5fa", min: 8.1 },
-                  { label: "Bueno", color: "#16a34a", min: 7.6 },
-                  { label: "Aceptable", color: "#4ade80", min: 7.1 },
-                  { label: "Regular", color: "#eab308", min: 6.6 },
-                  { label: "Bajo", color: "#f97316", min: 6.1 },
-                  { label: "Muy malo", color: "#ef4444", min: 0 },
+                  { label: "Épico", color: "#a855f7" },
+                  { label: "Excelente", color: "#2563eb" },
+                  { label: "Muy bueno", color: "#60a5fa" },
+                  { label: "Bueno", color: "#16a34a" },
+                  { label: "Aceptable", color: "#4ade80" },
+                  { label: "Regular", color: "#eab308" },
+                  { label: "Bajo", color: "#f97316" },
+                  { label: "Muy malo", color: "#ef4444" },
                 ].map((level) => (
-                  <div
-                    key={level.label}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/50"
-                  >
+                  <div key={level.label} className="flex items-center gap-1">
                     <div
-                      className="w-2.5 h-2.5 rounded-full"
+                      className="w-2 h-2 rounded-full"
                       style={{ backgroundColor: level.color }}
                     />
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[11px] text-muted-foreground">
                       {level.label}
                     </span>
                   </div>
