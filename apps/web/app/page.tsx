@@ -7,7 +7,7 @@ import { UserButton, useUser, useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { matchService } from "@/lib/match-service";
 import type { Match } from "@/lib/match-service";
-import { Plus, Trophy, Calendar, TrendingUp, ChevronRight } from "lucide-react";
+import { Plus, Trophy, Calendar, TrendingUp, ChevronRight, Star } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -377,6 +377,14 @@ export default function Dashboard() {
               {last5Matches.map((match) => {
                 const resultBadge = getResultBadge(match.result);
                 const ratingGlow = getRatingGlow(match.rating);
+                const allPlayers = [
+                  ...match.team1.players,
+                  ...match.team2.players,
+                ];
+                const maxRating = allPlayers.length > 0
+                  ? Math.max(...allPlayers.map((p) => p.rating))
+                  : -1;
+                const isMvp = allPlayers.length > 0 && match.rating === maxRating;
                 return (
                   <Link
                     key={match.id}
@@ -404,6 +412,12 @@ export default function Dashboard() {
                           >
                             {resultBadge.label}
                           </span>
+                          {isMvp && (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/25 flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-yellow-400" />
+                              MVP
+                            </span>
+                          )}
                           <span className="text-xs text-muted-foreground">
                             {formatDate(match.date)}
                           </span>
