@@ -30,10 +30,12 @@ model Player {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  teamPlayers     TeamPlayer[]
-  ratingsGiven    PlayerRating[] @relation("RatingsGiven") // Ratings this player gave
-  ratingsReceived PlayerRating[] @relation("RatingsReceived") // Ratings this player received
+  user             User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  teamPlayers      TeamPlayer[]
+  ratingsGiven     PlayerRating[] @relation("RatingsGiven") // Ratings this player gave
+  ratingsReceived  PlayerRating[] @relation("RatingsReceived") // Ratings this player received
+  revealsAsSubject RatingReveal[] @relation("RevealSubject")
+  revealsAsOwner   RatingReveal[] @relation("RevealOwner")
 
   @@map("players")
 }
@@ -50,6 +52,7 @@ model Match {
   // Relations
   teams         Team[]
   playerRatings PlayerRating[]
+  ratingReveals RatingReveal[]
 
   @@map("matches")
 }
@@ -98,4 +101,19 @@ model PlayerRating {
 
   @@unique([matchId, ownerPlayerId, destinationPlayerId]) // One rating per owner per destination per match
   @@map("player_ratings")
+}
+
+model RatingReveal {
+  id              Int      @id @default(autoincrement())
+  matchId         Int
+  subjectPlayerId String   // the user's own player (who is peeking)
+  ownerPlayerId   String   // the player whose rating was revealed
+  createdAt       DateTime @default(now())
+
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  subject Player @relation("RevealSubject", fields: [subjectPlayerId], references: [id], onDelete: Cascade)
+  owner   Player @relation("RevealOwner", fields: [ownerPlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, subjectPlayerId]) // one reveal per player per match
+  @@map("rating_reveals")
 }

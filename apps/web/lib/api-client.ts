@@ -144,6 +144,43 @@ export async function deleteMatch(id: number): Promise<ApiResponse<boolean>> {
   }
 }
 
+const revealResultSchema = z.object({
+  ownerPlayerId: z.string(),
+  ownerName: z.string(),
+  rating: z.number().nullable(),
+})
+
+export type RevealResult = z.infer<typeof revealResultSchema>
+
+/**
+ * Get an existing reveal for a player in a match
+ */
+export async function getMatchReveal(
+  matchId: number,
+  subjectPlayerId: string
+): Promise<ApiResponse<{ reveal: RevealResult | null }>> {
+  return fetchApi(
+    `/api/matches/${matchId}/reveal?subjectPlayerId=${subjectPlayerId}`,
+    undefined,
+    z.object({ reveal: revealResultSchema.nullable() })
+  )
+}
+
+/**
+ * Reveal the rating a specific player gave you in a match (one-time, permanent)
+ */
+export async function revealRating(
+  matchId: number,
+  subjectPlayerId: string,
+  ownerPlayerId: string
+): Promise<ApiResponse<RevealResult>> {
+  return fetchApi(
+    `/api/matches/${matchId}/reveal`,
+    { method: 'POST', body: JSON.stringify({ subjectPlayerId, ownerPlayerId }) },
+    revealResultSchema
+  )
+}
+
 /**
  * Update match ratings
  */

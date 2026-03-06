@@ -7,6 +7,9 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { matchService } from "@/lib/match-service";
 import type { Match } from "@/lib/match-service";
+import { getMatchReveal } from "@/lib/api-client";
+import type { RevealResult } from "@/lib/api-client";
+import { IndividualRatingViewer } from "@/components/IndividualRatingViewer";
 import { ArrowLeft, Copy, Check, Share2 } from "lucide-react";
 
 function formatDate(dateString: string): string {
@@ -92,6 +95,8 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
   const [loading, setLoading] = useState(true);
   const [matchId, setMatchId] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
+  const [initialReveal, setInitialReveal] = useState<RevealResult | null>(null);
 
   useEffect(() => {
     async function loadParams() {
@@ -111,12 +116,25 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
     const currentMatchId = matchId;
     async function loadMatch() {
       try {
-        const loadedMatch = await matchService.getMatchById(currentMatchId);
+        const [loadedMatch, myPlayerRes] = await Promise.all([
+          matchService.getMatchById(currentMatchId),
+          fetch(`/api/matches/${currentMatchId}/my-player`).then((r) => r.json()),
+        ]);
         if (!loadedMatch) {
           router.push("/");
           return;
         }
         setMatch(loadedMatch);
+
+        const playerId: string | null = myPlayerRes.playerId ?? null;
+        setMyPlayerId(playerId);
+
+        if (playerId) {
+          const revealRes = await getMatchReveal(currentMatchId, playerId);
+          if (revealRes.success) {
+            setInitialReveal(revealRes.data.reveal);
+          }
+        }
       } catch {
         router.push("/");
       } finally {
@@ -356,6 +374,14 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
             </div>
           </div>
         </div>
+
+        {myPlayerId && (
+          <IndividualRatingViewer
+            match={match}
+            myPlayerId={myPlayerId}
+            initialReveal={initialReveal}
+          />
+        )}
       </div>
     </main>
   );
