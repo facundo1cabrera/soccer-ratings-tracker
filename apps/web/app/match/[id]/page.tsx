@@ -11,7 +11,6 @@ import { getMatchReveal } from "@/lib/api-client";
 import type { RevealResult } from "@/lib/api-client";
 import { IndividualRatingViewer } from "@/components/IndividualRatingViewer";
 import { ArrowLeft, Copy, Check, Share2, ChevronRight } from "lucide-react";
-import { PlayerHistorySheet } from "@/components/PlayerHistorySheet";
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -98,7 +97,6 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
   const [copied, setCopied] = useState(false);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
   const [initialReveal, setInitialReveal] = useState<RevealResult | null>(null);
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadParams() {
@@ -304,7 +302,7 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
                     <button
                       key={player.id}
                       className="flex items-center gap-3 w-full text-left rounded-lg px-1 py-1.5 hover:bg-muted/50 transition-colors group"
-                      onClick={() => setSelectedPlayerId(String(player.id))}
+                      onClick={() => router.push(`/player/${player.id}`)}
                     >
                       <Avatar className="h-9 w-9 shrink-0 text-xs">
                         {player.profileImage && (
@@ -353,7 +351,7 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
                     <button
                       key={player.id}
                       className="flex items-center gap-3 w-full text-left rounded-lg px-1 py-1.5 hover:bg-muted/50 transition-colors group"
-                      onClick={() => setSelectedPlayerId(String(player.id))}
+                      onClick={() => router.push(`/player/${player.id}`)}
                     >
                       <Avatar className="h-9 w-9 shrink-0">
                         {player.profileImage && (
@@ -396,10 +394,6 @@ export default function MatchDetailPage({ params }: MatchDetailPageProps) {
         )}
       </div>
 
-      <PlayerHistorySheet
-        playerId={selectedPlayerId}
-        onClose={() => setSelectedPlayerId(null)}
-      />
     </main>
   );
 }
