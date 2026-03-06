@@ -13,8 +13,8 @@ type ApiResponse<T> =
 
 async function fetchApi<T>(
   url: string,
-  options?: RequestInit,
-  schema: z.ZodSchema<T>
+  schema: z.ZodSchema<T>,
+  options?: RequestInit
 ): Promise<ApiResponse<T>> {
   try {
     const response = await fetch(url, {
@@ -59,14 +59,14 @@ async function fetchApi<T>(
  * Get all matches
  */
 export async function getAllMatches(): Promise<ApiResponse<Match[]>> {
-  return fetchApi('/api/matches', undefined, z.array(matchSchema))
+  return fetchApi('/api/matches', z.array(matchSchema))
 }
 
 /**
  * Get a match by ID
  */
 export async function getMatchById(id: number): Promise<ApiResponse<Match | null>> {
-  return fetchApi(`/api/matches/${id}`, undefined, matchSchema.nullable())
+  return fetchApi(`/api/matches/${id}`, matchSchema.nullable())
 }
 
 /**
@@ -93,10 +93,10 @@ export async function createMatch(
     }
   }
 
-  return fetchApi('/api/matches', {
+  return fetchApi('/api/matches', matchSchema, {
     method: 'POST',
     body: JSON.stringify(validated.data),
-  }, matchSchema)
+  })
 }
 
 /**
@@ -106,10 +106,10 @@ export async function updateMatch(
   id: number,
   updates: Partial<Match>
 ): Promise<ApiResponse<Match>> {
-  return fetchApi(`/api/matches/${id}`, {
+  return fetchApi(`/api/matches/${id}`, matchSchema, {
     method: 'PUT',
     body: JSON.stringify(updates),
-  }, matchSchema)
+  })
 }
 
 /**
@@ -161,7 +161,6 @@ export async function getMatchReveal(
 ): Promise<ApiResponse<{ reveal: RevealResult | null }>> {
   return fetchApi(
     `/api/matches/${matchId}/reveal?subjectPlayerId=${subjectPlayerId}`,
-    undefined,
     z.object({ reveal: revealResultSchema.nullable() })
   )
 }
@@ -176,8 +175,8 @@ export async function revealRating(
 ): Promise<ApiResponse<RevealResult>> {
   return fetchApi(
     `/api/matches/${matchId}/reveal`,
-    { method: 'POST', body: JSON.stringify({ subjectPlayerId, ownerPlayerId }) },
-    revealResultSchema
+    revealResultSchema,
+    { method: 'POST', body: JSON.stringify({ subjectPlayerId, ownerPlayerId }) }
   )
 }
 
@@ -197,9 +196,9 @@ export async function updateMatchRatings(
     }
   }
 
-  return fetchApi(`/api/matches/${matchId}/ratings`, {
+  return fetchApi(`/api/matches/${matchId}/ratings`, matchSchema, {
     method: 'PUT',
     body: JSON.stringify(validated.data),
-  }, matchSchema)
+  })
 }
 
