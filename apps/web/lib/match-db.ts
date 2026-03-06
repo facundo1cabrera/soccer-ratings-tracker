@@ -49,10 +49,10 @@ export async function dbMatchToMatchSchema(dbMatch: {
   const playerRatingMap = new Map<string, number>()
   playersWithRatings.forEach((player: { id: string; ratingsReceived: Array<{ rating: number }> }) => {
     if (player.ratingsReceived.length > 0) {
-      const avgRating = player.ratingsReceived.reduce(
-        (sum: number, r: { rating: number }) => sum + r.rating,
-        0
-      ) / player.ratingsReceived.length
+      const ratings = player.ratingsReceived.map((r: { rating: number }) => r.rating)
+      const preliminaryAvg = ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length
+      const filteredRatings = ratings.filter((r: number) => preliminaryAvg - r <=3.5)
+      const avgRating = filteredRatings.reduce((sum: number, r: number) => sum + r, 0) / filteredRatings.length
       playerRatingMap.set(player.id, avgRating)
     } else {
       playerRatingMap.set(player.id, 5.0) // Default rating
@@ -97,26 +97,39 @@ export async function dbMatchToMatchSchema(dbMatch: {
     
     // Only calculate player-specific rating if the user's players are in the match
     if (userPlayersInMatch.size > 0) {
-      // Find all ratings received by the specified players in this match
-      const playerRatings = dbMatch.playerRatings.filter(pr => 
-        userPlayersInMatch.has(pr.destinationPlayerId)
-      )
-      
-      if (playerRatings.length > 0) {
-        // Calculate average of ratings received by the user's players
-        matchRating = playerRatings.reduce((sum, pr) => sum + pr.rating, 0) / playerRatings.length
+      // Use the already-filtered per-player ratings from playerRatingMap
+      const userPlayerRatings = Array.from(userPlayersInMatch)
+        .map(id => playerRatingMap.get(id))
+        .filter((r): r is number => r !== undefined)
+
+      if (userPlayerRatings.length > 0) {
+        matchRating = userPlayerRatings.reduce((sum, r) => sum + r, 0) / userPlayerRatings.length
       } else {
-        // If user's players are in the match but haven't received ratings yet, use default
         matchRating = 5.0
       }
     }
     // If user's players are not in the match, use the overall average (matchRating = dbMatch.rating)
   }
 
+  // Adjust result from the user's team perspective
+  let adjustedResult = dbMatch.result as 'Victoria' | 'Derrota' | 'Empate'
+  if (playerIds && playerIds.length > 0 && adjustedResult !== 'Empate') {
+    const team1PlayerIds = new Set(team1.teamPlayers.map(tp => tp.player.id))
+    const team2PlayerIds = new Set(team2.teamPlayers.map(tp => tp.player.id))
+
+    const userOnTeam1 = playerIds.some(id => team1PlayerIds.has(id))
+    const userOnTeam2 = playerIds.some(id => team2PlayerIds.has(id))
+
+    // Only invert if user is exclusively on team2
+    if (!userOnTeam1 && userOnTeam2) {
+      adjustedResult = adjustedResult === 'Victoria' ? 'Derrota' : 'Victoria'
+    }
+  }
+
   return {
     id: dbMatch.id,
     date: dbMatch.date.toISOString().split('T')[0],
-    result: dbMatch.result as 'Victoria' | 'Derrota' | 'Empate',
+    result: adjustedResult,
     name: dbMatch.name,
     rating: matchRating,
     team1: transformTeam(team1),
