@@ -447,22 +447,20 @@ export default function Dashboard() {
         </section>
       </div>
 
-      {/* Mobile FAB - only show when no matches */}
-      {matches.length === 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 sm:hidden">
-          <div className="max-w-2xl mx-auto">
-            <Link href="/match/create">
-              <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20"
-                size="lg"
-              >
-                <Plus className="mr-2 h-5 w-5" />
-                Nuevo partido
-              </Button>
-            </Link>
-          </div>
+      {/* Mobile FAB */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 sm:hidden">
+        <div className="max-w-2xl mx-auto">
+          <Link href="/match/create">
+            <Button
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20"
+              size="lg"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Nuevo partido
+            </Button>
+          </Link>
         </div>
-      )}
+      </div>
     </main>
   );
 }
