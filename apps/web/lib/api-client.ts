@@ -180,6 +180,43 @@ export async function revealRating(
   )
 }
 
+const playerHistoryMatchSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  date: z.string(),
+  result: z.enum(['Victoria', 'Derrota', 'Empate']),
+  rating: z.number(),
+  goals: z.object({ myTeam: z.number(), opponent: z.number() }),
+})
+
+const playerHistorySchema = z.object({
+  player: z.object({
+    id: z.string(),
+    name: z.string(),
+    userId: z.string().nullable(),
+    isClaimed: z.boolean(),
+  }),
+  stats: z.object({
+    totalMatches: z.number(),
+    avgRating: z.number(),
+    victories: z.number(),
+    defeats: z.number(),
+    draws: z.number(),
+  }),
+  matches: z.array(playerHistoryMatchSchema),
+})
+
+export type PlayerHistory = z.infer<typeof playerHistorySchema>
+
+/**
+ * Get a player's match history
+ */
+export async function getPlayerHistory(
+  playerId: string
+): Promise<ApiResponse<PlayerHistory>> {
+  return fetchApi(`/api/players/${playerId}/history`, playerHistorySchema)
+}
+
 /**
  * Update match ratings
  */
