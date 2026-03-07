@@ -8,56 +8,8 @@ import { Button } from "@/components/ui/button";
 import { matchService } from "@/lib/match-service";
 import type { Match } from "@/lib/match-service";
 import { Plus, Trophy, Calendar, TrendingUp, ChevronRight, Star } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
-
-function getRatingColor(rating: number): string {
-  if (rating >= 9.0) return "bg-purple-500";
-  if (rating >= 8.6) return "bg-blue-600";
-  if (rating >= 8.1) return "bg-blue-400";
-  if (rating >= 7.6) return "bg-green-600";
-  if (rating >= 7.1) return "bg-green-400";
-  if (rating >= 6.6) return "bg-yellow-500";
-  if (rating >= 6.1) return "bg-orange-500";
-  return "bg-red-500";
-}
-
-function getRatingGlow(rating: number): string {
-  if (rating >= 9.0) return "shadow-purple-500/40";
-  if (rating >= 8.1) return "shadow-blue-500/40";
-  if (rating >= 7.1) return "shadow-green-500/40";
-  if (rating >= 6.1) return "shadow-yellow-500/40";
-  return "shadow-red-500/40";
-}
-
-function getChartColor(rating: number): string {
-  if (rating >= 9.0) return "#a855f7";
-  if (rating >= 8.6) return "#2563eb";
-  if (rating >= 8.1) return "#60a5fa";
-  if (rating >= 7.6) return "#16a34a";
-  if (rating >= 7.1) return "#4ade80";
-  if (rating >= 6.6) return "#eab308";
-  if (rating >= 6.1) return "#f97316";
-  return "#ef4444";
-}
-
-function getPerformanceLabel(rating: number): string {
-  if (rating >= 9.0) return "Épico";
-  if (rating >= 8.6) return "Excelente";
-  if (rating >= 8.1) return "Muy bueno";
-  if (rating >= 7.6) return "Bueno";
-  if (rating >= 7.1) return "Aceptable";
-  if (rating >= 6.6) return "Regular";
-  if (rating >= 6.1) return "Bajo";
-  return "Muy malo";
-}
+import { MonthlyPerformanceChart } from "@/components/MonthlyPerformanceChart";
+import { getRatingColor, getRatingGlow } from "@/lib/rating-utils";
 
 function getResultBadge(result: string): { label: string; classes: string } {
   switch (result) {
@@ -153,12 +105,11 @@ export default function Dashboard() {
 
   // Stats
   const victories = matches.filter((m) => m.result === "Victoria").length;
-  const avgRating =
+  const avgRatingNum =
     matches.length > 0
-      ? (
-          matches.reduce((sum, m) => sum + m.rating, 0) / matches.length
-        ).toFixed(1)
-      : "—";
+      ? matches.reduce((sum, m) => sum + m.rating, 0) / matches.length
+      : 0;
+  const avgRating = matches.length > 0 ? avgRatingNum.toFixed(1) : "—";
 
   return (
     <main className="min-h-screen bg-background pb-28 sm:pb-0">
@@ -207,143 +158,13 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Rating Trend Chart */}
-        {matches.length >= 2 && (
+        {/* Monthly performance chart */}
+        {matches.length >= 1 && (
           <section className="mb-8">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
-              Historial de rendimientos
-            </h2>
-            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart
-                  data={[...matches].reverse().map((m, i) => ({
-                    name: `${i + 1}`,
-                    rating: m.rating,
-                    date: formatDate(m.date),
-                    result: m.result,
-                    color: getChartColor(m.rating),
-                    performance: getPerformanceLabel(m.rating),
-                  }))}
-                  margin={{ top: 10, right: 8, left: -20, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="ratingGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="2 4"
-                    stroke="#2a2a2a"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#52525b"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    dy={4}
-                  />
-                  <YAxis
-                    domain={[0, 10]}
-                    stroke="#52525b"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    ticks={[0, 5, 10]}
-                  />
-                  <Tooltip
-                    cursor={{ stroke: "#6366f1", strokeWidth: 1, strokeDasharray: "4 2" }}
-                    content={({ payload }) => {
-                      if (!payload || !payload[0]) return null;
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-card/95 backdrop-blur border border-border/80 rounded-xl px-3.5 py-2.5 shadow-xl">
-                          <p className="text-[11px] text-muted-foreground mb-1">
-                            {data.date}
-                          </p>
-                          <p className="text-base font-bold text-foreground leading-tight">
-                            {data.rating.toFixed(1)}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: data.color }}
-                            />
-                            <p
-                              className="text-xs font-medium"
-                              style={{ color: data.color }}
-                            >
-                              {data.performance}
-                            </p>
-                            <span className="text-xs text-muted-foreground">· {data.result}</span>
-                          </div>
-                        </div>
-                      );
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="rating"
-                    stroke="#6366f1"
-                    strokeWidth={2.5}
-                    fill="url(#ratingGradient)"
-                    dot={(props: any) => {
-                      const { cx, cy, payload } = props;
-                      return (
-                        <circle
-                          key={`dot-${cx}-${cy}`}
-                          cx={cx}
-                          cy={cy}
-                          r={4.5}
-                          fill={payload.color}
-                          stroke="#0a0a0a"
-                          strokeWidth={2}
-                        />
-                      );
-                    }}
-                    activeDot={(props: any) => {
-                      const { cx, cy, payload } = props;
-                      return (
-                        <circle
-                          key={`active-${cx}-${cy}`}
-                          cx={cx}
-                          cy={cy}
-                          r={7}
-                          fill={payload.color}
-                          stroke="#fff"
-                          strokeWidth={2.5}
-                        />
-                      );
-                    }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-              {/* Legend */}
-              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-4 justify-center">
-                {[
-                  { label: "Épico", color: "#a855f7" },
-                  { label: "Excelente", color: "#2563eb" },
-                  { label: "Muy bueno", color: "#60a5fa" },
-                  { label: "Bueno", color: "#16a34a" },
-                  { label: "Aceptable", color: "#4ade80" },
-                  { label: "Regular", color: "#eab308" },
-                  { label: "Bajo", color: "#f97316" },
-                  { label: "Muy malo", color: "#ef4444" },
-                ].map((level) => (
-                  <div key={level.label} className="flex items-center gap-1">
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: level.color }}
-                    />
-                    <span className="text-[11px] text-muted-foreground">
-                      {level.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <MonthlyPerformanceChart
+              matches={matches}
+              overallAvg={avgRatingNum}
+            />
           </section>
         )}
 

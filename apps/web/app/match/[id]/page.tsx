@@ -11,6 +11,7 @@ import { getMatchReveal } from "@/lib/api-client";
 import type { RevealResult } from "@/lib/api-client";
 import { IndividualRatingViewer } from "@/components/IndividualRatingViewer";
 import { ArrowLeft, Copy, Check, Share2, ChevronRight } from "lucide-react";
+import { getRatingColor, getRatingTextColor } from "@/lib/rating-utils";
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -19,28 +20,6 @@ function formatDate(dateString: string): string {
     month: "long",
     year: "numeric",
   });
-}
-
-function getRatingColor(rating: number): string {
-  if (rating >= 9.0) return "bg-purple-500";
-  if (rating >= 8.6) return "bg-blue-600";
-  if (rating >= 8.1) return "bg-blue-400";
-  if (rating >= 7.6) return "bg-green-600";
-  if (rating >= 7.1) return "bg-green-400";
-  if (rating >= 6.6) return "bg-yellow-500";
-  if (rating >= 6.1) return "bg-orange-500";
-  return "bg-red-500";
-}
-
-function getRatingTextColor(rating: number): string {
-  if (rating >= 9.0) return "text-purple-400";
-  if (rating >= 8.6) return "text-blue-400";
-  if (rating >= 8.1) return "text-blue-300";
-  if (rating >= 7.6) return "text-green-400";
-  if (rating >= 7.1) return "text-green-300";
-  if (rating >= 6.6) return "text-yellow-400";
-  if (rating >= 6.1) return "text-orange-400";
-  return "text-red-400";
 }
 
 function getInitials(name: string): string {

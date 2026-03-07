@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Save } from "lucide-react";
 import { matchService } from "@/lib/match-service";
 import type { Match } from "@/lib/match-service";
+import { getRatingColor } from "@/lib/rating-utils";
 
 interface Player {
   id: string;
@@ -18,17 +19,6 @@ interface Player {
 
 interface RateMatchPageProps {
   params: Promise<{ id: string }>;
-}
-
-function getRatingColor(rating: number): string {
-  if (rating >= 9.0) return "bg-purple-500";
-  if (rating >= 8.6) return "bg-blue-600";
-  if (rating >= 8.1) return "bg-blue-400";
-  if (rating >= 7.6) return "bg-green-600";
-  if (rating >= 7.1) return "bg-green-400";
-  if (rating >= 6.6) return "bg-yellow-500";
-  if (rating >= 6.1) return "bg-orange-500";
-  return "bg-red-500";
 }
 
 function getRatingLabel(rating: number): string {
