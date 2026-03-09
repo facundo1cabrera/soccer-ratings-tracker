@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { matchSchema } from '@/lib/match-schemas'
-import { getMatchByIdFromDb } from '@/lib/match-db'
+import { getMatchByIdFromDb, dbMatchToMatchSchema } from '@/lib/match-db'
+import { prisma } from '@/lib/prisma'
 import { withUserCreation } from '@/lib/api-helpers'
 import { Match } from '@prisma/client'
 
@@ -78,9 +79,6 @@ async function handlePUT(
     }
 
     // Update match in database
-    const { prisma } = await import('@/lib/prisma')
-    const { dbMatchToMatchSchema } = await import('@/lib/match-db')
-    
     const updateData: Partial<Match> = {}
     if (updates.name) updateData.name = updates.name
     if (updates.date) updateData.date = new Date(updates.date)
@@ -142,7 +140,6 @@ async function handleDELETE(
     }
 
     // Check if match exists
-    const { getMatchByIdFromDb } = await import('@/lib/match-db')
     const existingMatch = await getMatchByIdFromDb(matchId)
     
     if (!existingMatch) {
@@ -153,7 +150,6 @@ async function handleDELETE(
     }
 
     // Delete match (cascade will delete teams, teamPlayers, and playerRatings)
-    const { prisma } = await import('@/lib/prisma')
     await prisma.match.delete({
       where: { id: matchId },
     })
