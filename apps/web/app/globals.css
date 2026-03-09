@@ -87,7 +87,6 @@
         rgba(59, 130, 246, 0.04) 0%,
         transparent 50%
       );
-    background-attachment: fixed;
   }
 
   /* Custom scrollbar */

@@ -27,36 +27,19 @@ export async function dbMatchToMatchSchema(dbMatch: {
     rating: number
   }>
 }, playerIds?: string[]): Promise<Match> {
-  // Get all unique player IDs from teams
-  const allPlayerIds = new Set<string>()
-  dbMatch.teams.forEach(team => {
-    team.teamPlayers.forEach(tp => {
-      allPlayerIds.add(tp.player.id)
-    })
-  })
-
-  // Fetch all players with their ratings for this match
-  const playersWithRatings = await prisma.player.findMany({
-    where: { id: { in: Array.from(allPlayerIds) } },
-    include: {
-      ratingsReceived: {
-        where: { matchId: dbMatch.id },
-      },
-    },
-  })
-
-  // Create a map of player ID to average rating
   const playerRatingMap = new Map<string, number>()
-  playersWithRatings.forEach((player: { id: string; ratingsReceived: Array<{ rating: number }> }) => {
-    if (player.ratingsReceived.length > 0) {
-      const ratings = player.ratingsReceived.map((r: { rating: number }) => r.rating)
-      const preliminaryAvg = ratings.reduce((sum: number, r: number) => sum + r, 0) / ratings.length
-      const filteredRatings = ratings.filter((r: number) => preliminaryAvg - r <=3.5)
-      const avgRating = filteredRatings.reduce((sum: number, r: number) => sum + r, 0) / filteredRatings.length
-      playerRatingMap.set(player.id, avgRating)
-    } else {
-      playerRatingMap.set(player.id, 5.0) // Default rating
-    }
+  const ratingsByDestination = new Map<string, number[]>()
+
+  dbMatch.playerRatings.forEach(r => {
+    const list = ratingsByDestination.get(r.destinationPlayerId) ?? []
+    list.push(r.rating)
+    ratingsByDestination.set(r.destinationPlayerId, list)
+  })
+
+  ratingsByDestination.forEach((ratings, playerId) => {
+    const preliminaryAvg = ratings.reduce((s, r) => s + r, 0) / ratings.length
+    const filtered = ratings.filter(r => preliminaryAvg - r <= 3.5)
+    playerRatingMap.set(playerId, filtered.reduce((s, r) => s + r, 0) / filtered.length)
   })
 
   // Transform teams

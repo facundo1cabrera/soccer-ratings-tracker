@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserButton, useUser, useAuth } from "@clerk/nextjs";
@@ -96,20 +96,22 @@ export default function Dashboard() {
     loadMatches();
   }, [isSignedIn]);
 
+  // Stats — must be before any early returns (Rules of Hooks)
+  const { victories, avgRating, avgRatingNum } = useMemo(() => {
+    const v = matches.filter((m) => m.result === "Victoria").length;
+    const num =
+      matches.length > 0
+        ? matches.reduce((sum, m) => sum + m.rating, 0) / matches.length
+        : 0;
+    return { victories: v, avgRatingNum: num, avgRating: matches.length > 0 ? num.toFixed(1) : "—" };
+  }, [matches]);
+
   if (!isLoaded || !isSignedIn || loading) return <LoadingSkeleton />;
 
   const last5Matches = showAllMatches ? matches : matches.slice(0, 5);
   const hasMoreMatches = matches.length > 5;
   const userName =
     isLoaded && user ? user.firstName || user.username || "Usuario" : "Usuario";
-
-  // Stats
-  const victories = matches.filter((m) => m.result === "Victoria").length;
-  const avgRatingNum =
-    matches.length > 0
-      ? matches.reduce((sum, m) => sum + m.rating, 0) / matches.length
-      : 0;
-  const avgRating = matches.length > 0 ? avgRatingNum.toFixed(1) : "—";
 
   return (
     <main className="min-h-screen bg-background pb-28 sm:pb-0">

@@ -87,7 +87,7 @@ export default function LandingPage() {
       <header className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <span className="text-xl font-bold tracking-tight">
-            ⚽ Ratings FC
+            ⚽ RateMyGame
           </span>
           <nav className="flex items-center gap-3">
             <SignedOut>
@@ -279,7 +279,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <span>⚽ Ratings FC — Fútbol amateur, calificaciones reales.</span>
+          <span>⚽ RateMyGame — Fútbol amateur, calificaciones reales.</span>
           <div className="flex gap-4">
             <Link
               href="/sign-in"
