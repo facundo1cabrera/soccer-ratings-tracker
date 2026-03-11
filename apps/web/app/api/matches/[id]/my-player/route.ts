@@ -17,28 +17,13 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid match ID' }, { status: 400 })
   }
 
-  const userPlayers = await prisma.player.findMany({
-    where: { userId },
-    select: { id: true },
-  })
-  const userPlayerIds = new Set(userPlayers.map((p) => p.id))
-
-  const match = await prisma.match.findUnique({
-    where: { id: matchId },
-    include: { teams: { include: { teamPlayers: { select: { playerId: true } } } } },
+  const teamPlayer = await prisma.teamPlayer.findFirst({
+    where: {
+      player: { userId },
+      team: { matchId },
+    },
+    select: { playerId: true },
   })
 
-  if (!match) {
-    return NextResponse.json({ playerId: null })
-  }
-
-  for (const team of match.teams) {
-    for (const tp of team.teamPlayers) {
-      if (userPlayerIds.has(tp.playerId)) {
-        return NextResponse.json({ playerId: tp.playerId })
-      }
-    }
-  }
-
-  return NextResponse.json({ playerId: null })
+  return NextResponse.json({ playerId: teamPlayer?.playerId ?? null })
 }
